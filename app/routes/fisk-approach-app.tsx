@@ -1,102 +1,130 @@
-import React, { useState, useEffect } from 'react';
-// import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+import { useState, useEffect } from "react";
+import { stages } from "./stages";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faChevronLeft,
+  faChevronRight,
+  faCog,
+  faInfoCircle,
+  faVolumeUp,
+} from "@fortawesome/free-solid-svg-icons";
+import { IconName } from "@fortawesome/fontawesome-svg-core";
+import ReactMarkdown from "react-markdown";
 
-const stages = [
-  {
-    title: "Pre-Approach Preparation",
-    instructions: [
-      { text: "Review NOTAM for arrival procedures", icon: "info-circle" },
-      { text: "Monitor ATIS on 125.9", icon: "radio" },
-      { text: "Have AirVenture NOTAM on board", icon: "map" },
-    ],
-    detailedInfo: "Ensure you have the latest AirVenture NOTAM and familiarize yourself with the arrival procedure. The ATIS frequency 125.9 will provide current airport information.",
-    nextStepPrep: "Proceed to Ripon at 1,800 feet MSL",
-    timelinePosition: 0
-  },
-  {
-    title: "Initial Contact Point (Ripon)",
-    instructions: [
-      { text: "Arrive at Ripon at 1,800 feet MSL", icon: "target" },
-      { text: "Join single-file line over railroad tracks", icon: "users" },
-    ],
-    detailedInfo: "Ripon is your initial contact point. Maintain 1,800 feet MSL and form a single-file line following the railroad tracks.",
-    nextStepPrep: "Prepare to maintain 90 knots",
-    timelinePosition: 25
-  },
-  {
-    title: "Speed and Altitude Management",
-    instructions: [
-      { text: "Maintain 90 knots (or 2,300 rpm for slower aircraft)", icon: "plane" },
-      { text: "Maintain 1,800 feet MSL", icon: "target" },
-    ],
-    detailedInfo: "From Ripon to Fisk, maintain 90 knots (or 2,300 rpm for slower aircraft) and keep your altitude at 1,800 feet MSL. This ensures proper spacing and flow of traffic.",
-    nextStepPrep: "Watch for proper spacing between aircraft",
-    timelinePosition: 50
-  },
-  {
-    title: "Aircraft Spacing",
-    instructions: [
-      { text: "Maintain half-mile separation", icon: "users" },
-      { text: "Adjust spacing as instructed by ATC", icon: "radio" },
-    ],
-    detailedInfo: "Proper spacing is crucial for safety. Aim for half-mile separation between aircraft. Be prepared to adjust your spacing if instructed by ATC.",
-    nextStepPrep: "Look for Fisk water tower",
-    timelinePosition: 75
-  },
-  {
-    title: "Visual References and Landmarks",
-    instructions: [
-      { text: "Follow railroad tracks from Ripon to Fisk", icon: "map" },
-      { text: "Report at Fisk water tower", icon: "landmark" },
-      { text: "Prepare for right turn at power plant", icon: "chevron-right" },
-    ],
-    detailedInfo: "Use visual landmarks to navigate. The railroad tracks will guide you from Ripon to Fisk. The Fisk water tower is your reporting point, and you'll make a right turn at the power plant.",
-    nextStepPrep: "Monitor Fisk Approach on 120.7",
-    timelinePosition: 100
-  },
+import { notamList } from "./notamList.js";
+
+import "../approach.css";
+
+const standingInstructions = [
+  "ATIS: **125.9** - Fisk Approach: **120.7**",
+  "NOAA Weather Radio frequency for southern Winnebago County: **162.500**",
+  "No FISK arrivals before **8 a.m. CDT on Thursday, July 25.**",
+  `Transition points approaching Oshkosh from the west:    
+  **Endeavor Bridge**, **Puckaway Lake**, and **Green Lake**. 
+  ATC activates them on ATIS during highest traffic flows.`,
 ];
 
-const ApproachMap = () => (
-  <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-    <h2 className="text-xl font-bold mb-2">Approach Map</h2>
-    <div className="bg-gray-200 h-64 flex items-center justify-center">
-      <p>Interactive map would be displayed here</p>
+const CurrentSituationBox = () => {
+  return (
+    <div className="card bg-base-100 shadow-md mb-4">
+      <div className="card-body">
+        <h2 className="card-title">Current NOTAMs</h2>
+        <div className="flex flex-col -mx-2" style={{ minHeight: "300px" }}>
+          <div className="overflow-x-auto">
+            <table className="table table-xs w-full mt-4">
+              <thead>
+                <tr className="text-base-content">
+                  <th className="text-center">Number</th>
+                  <th className="text-center">Type</th>
+                  <th className="text-center">Until</th>
+                  <th className="text-center">Text</th>
+                </tr>
+              </thead>
+              <tbody>
+                {notamList.map((notam, index) => (
+                  <tr
+                    key={notam.id}
+                    className={index % 2 === 0 ? "bg-base-200" : "bg-base-100"}
+                  >
+                    <td>{notam.number}</td>
+                    <td>{notam.type}</td>
+                    <td>{notam.effectiveEnd}</td>
+                    <td className="text-base-content">{notam.text}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface TimelineProps {
   currentStage: number;
+  onStageClick: (stageIndex: number) => void;
 }
 
-const Timeline = ({ currentStage }: TimelineProps) => {
+const Timeline = ({ currentStage, onStageClick }: TimelineProps) => {
   const timelineData = stages.map((stage, index) => ({
     name: stage.title,
     progress: stage.timelinePosition,
-    current: index === currentStage
+    current: index === currentStage,
+    completed: index < currentStage,
   }));
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-      <h2 className="text-xl font-bold mb-2">Approach Timeline</h2>
-      {/* <ResponsiveContainer width="100%" height={100}>
-        <LineChart data={timelineData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <XAxis dataKey="name" tick={false} />
-          <YAxis hide={true} />
-          <Tooltip />
-          <Line type="monotone" dataKey="progress" stroke="#8884d8" strokeWidth={2} dot={{ r: 8 }} activeDot={{ r: 10 }} />
-          {timelineData.map((entry, index) => (
-            <ReferenceLine key={index} x={index} stroke="green" label={{ position: 'top', value: entry.name, fill: entry.current ? 'red' : 'black', fontSize: 10 }} />
+    <div className="card bg-base-100 shadow-xl mb-4">
+      <div className="card-body">
+        <h3 className="card-title text-center">Approach</h3>
+        <div className="flex flex-col mt-8">
+          {timelineData.map((stage, index) => (
+            <div
+              key={index}
+              role="button"
+              tabIndex={0}
+              className={`flex items-center mb-2 ${
+                stage.current ? "font-bold" : ""
+              }`}
+              onClick={() => onStageClick(index)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") onStageClick(index);
+              }}
+              style={{ cursor: "pointer" }}
+            >
+              <div
+                className={`badge ${
+                  stage.current
+                    ? "badge-error"
+                    : stage.completed
+                    ? "badge-success"
+                    : "badge-primary"
+                }`}
+              >
+                {index + 1}
+              </div>
+              <div className="ml-2 flex flex-col">
+                <p className="text-base">{stage.name}</p>
+                <p className="text-xs text-base-content text-opacity-50">{stage.progress}</p>
+              </div>
+            </div>
           ))}
-        </LineChart>
-      </ResponsiveContainer> */}
+        </div>
+      </div>
+      <div className="text-center text-base-content mt-4 mb-2">
+          Stage {currentStage + 1} of {stages.length}
+      </div>
+
     </div>
   );
 };
 
 interface Stage {
   title: string;
-  instructions: { text: string; icon: string }[];
+  instructions: { text: string; icon: IconName }[];
   detailedInfo: string;
   nextStepPrep: string;
   timelinePosition: number;
@@ -109,85 +137,50 @@ interface ApproachStageProps {
 }
 
 const ApproachStage = ({ stage, onNext, onPrev }: ApproachStageProps) => {
-  const [expanded, setExpanded] = useState(false);
-
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-      <h2 className="text-xl font-bold mb-2">{stage.title}</h2>
-      <ul className="list-none pl-0 mb-4">
-        {stage.instructions.map((instruction, index) => (
-          <li key={index} className="mb-2 flex items-center">
-            <i className={`fas fa-${instruction.icon} w-6 h-6 mr-2`}></i>
-            <span>{instruction.text}</span>
-          </li>
-        ))}
-      </ul>
-      <button 
-        onClick={() => setExpanded(!expanded)} 
-        className="text-blue-500 hover:text-blue-700 mb-2"
-      >
-        {expanded ? "Hide Details" : "Show Details"}
-      </button>
-      {expanded && (
-        <div className="bg-gray-100 p-2 rounded mb-4">
-          <p>{stage.detailedInfo}</p>
+    <div className="card bg-base-100 shadow-xl mb-4">
+      <div className="card-body">
+        <h2 className="card-title">{stage.title}</h2>
+        <ul className="list-none pl-0 mb-4">
+          {stage.instructions.map((instruction, index) => (
+            <li key={index} className="mb-2 flex items-center">
+              <FontAwesomeIcon
+                icon={["fas", instruction.icon]}
+                className="w-4 h-4 mr-2 text-primary"
+              />
+              <span className="text-base-content">
+                <ReactMarkdown>{instruction.text}</ReactMarkdown>
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="border border-base-300 rounded p-2 mb-4">
+          <p className="text-base-content">
+            <ReactMarkdown>{stage.detailedInfo}</ReactMarkdown>
+          </p>
         </div>
-      )}
-      <div className="bg-blue-100 p-2 rounded">
-        <h3 className="font-semibold mb-1">Prepare for next:</h3>
-        <p>{stage.nextStepPrep}</p>
-      </div>
-      <div className="flex justify-between mt-4">
-        <button
-          onClick={onPrev}
-          className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
-        >
-          <i className="fas fa-chevron-left mr-2"></i>
-          Prev
-        </button>
-        <button
-          onClick={onNext}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center"
-        >
-          Next
-          <i className="fas fa-chevron-right ml-2"></i>
-        </button>
-      </div>
-    </div>
-  );
-};
 
-interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  settings: { audioEnabled: boolean };
-  onSettingChange: (setting: string, value: boolean) => void;
-}
-
-const SettingsModal = ({ isOpen, onClose, settings, onSettingChange }: SettingsModalProps) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-      <div className="bg-white p-4 rounded-lg shadow-lg">
-        <h2 className="text-xl font-bold mb-4">Settings</h2>
-        <div className="mb-4">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={settings.audioEnabled}
-              onChange={(e) => onSettingChange('audioEnabled', e.target.checked)}
-              className="mr-2"
-            />
-            Enable Audio Cues
-          </label>
+        <div className="bg-base-300 p-4 rounded-lg shadow-md flex justify-end w-auto ml-auto">
+          <div>
+            <h3 className="font-semibold text-base-content mb-2">
+              Prepare for next stage:
+            </h3>
+            <p className="text-base-content text-opacity-70">
+              <ReactMarkdown>{stage.nextStepPrep}</ReactMarkdown>
+            </p>
+          </div>
         </div>
-        <button
-          onClick={onClose}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Close
-        </button>
+        <div className="flex justify-between mt-4">
+          <button onClick={onPrev} className="btn btn-outline">
+            <FontAwesomeIcon icon={faChevronLeft} className="w-4 h-4 mr-2" />
+            Prev
+          </button>
+          <button onClick={onNext} className="btn btn-primary">
+            Next
+            <FontAwesomeIcon icon={faChevronRight} className="w-4 h-4 ml-2" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -195,85 +188,79 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingChange }: SettingsM
 
 const FiskApproachApp = () => {
   const [currentStage, setCurrentStage] = useState(0);
-  const [settings, setSettings] = useState({ audioEnabled: true });
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  useEffect(() => {
-    if (settings.audioEnabled) {
-      console.log('(Fake) Audio enabled');
-      // fetch('/api/placeholder/audio', { method: 'HEAD' })
-      //   .then(response => {
-      //     if (response.ok) {
-      //       const audio = new Audio('/api/placeholder/audio');  // replace with actual audio file path
-      //       audio.play();
-      //     } else {
-      //       console.warn('Audio file not found');
-      //     }
-      //   })
-      //   .catch(error => console.error('Error fetching audio file:', error));
-    }
-  }, [currentStage, settings.audioEnabled]);
-
-  const handleNext = () => {
-    if (currentStage < stages.length - 1) {
-      setCurrentStage(currentStage + 1);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentStage > 0) {
-      setCurrentStage(currentStage - 1);
-    }
-  };
-
-  const handleSettingChange = (setting: string, value: boolean) => {
-    setSettings(prev => ({ ...prev, [setting]: value }));
-  };
+  const handleNext = () =>
+    currentStage < stages.length - 1 && setCurrentStage(currentStage + 1);
+  const handlePrev = () =>
+    currentStage > 0 && setCurrentStage(currentStage - 1);
+  const handleStageClick = (stageIndex: number) => setCurrentStage(stageIndex);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Fisk Approach Guide</h1>
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
-        >
-          <i className="fas fa-cog mr-2"></i>
-          Settings
-        </button>
+    <div className="min-h-screen bg-base-200 p-4 grid grid-cols-4 gap-4">
+      <div className="col-span-1">
+        <div className="flex flex-col justify-between h-full">
+          <div>
+            <h1 className="text-3xl font-extrabold mb-6 text-base-content text-center">
+              EAA Oshkosh 2024 Approach Guide
+            </h1>
+            <Timeline
+              currentStage={currentStage}
+              onStageClick={handleStageClick}
+            />
+            <div className="card bg-base-100 shadow-xl mb-4">
+              <div className="card-body">
+                <h3 className="card-title text-center">
+                  Standing Instructions
+                </h3>
+                <div className="flex flex-col mt-4 ml-4">
+                  <ul className="list-square text-base-content">
+                    {standingInstructions.map((instruction, index) => (
+                      <li key={index} className="mb-2">
+                        <ReactMarkdown>{instruction}</ReactMarkdown>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* <div className="text-center text-base-content mt-4">
+            Stage {currentStage + 1} of {stages.length}
+          </div> */}
+        </div>
       </div>
-      <div className="mb-4">
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
-          <div className="flex">
-            <div className="py-1"><i className="fas fa-info-circle fill-current h-6 w-6 text-yellow-500 mr-4"></i></div>
-            <div>
-              <p className="font-bold">Important</p>
-              <p className="text-sm">Always follow current ATC instructions and the latest NOTAM.</p>
+      <div className="col-span-3">
+        <div className="mb-4">
+          <div className="alert alert-warning">
+            <div className="flex">
+              <div className="py-1">
+                <FontAwesomeIcon
+                  icon={faInfoCircle}
+                  className="fill-current h-8 w-8 text-base-100 mr-4"
+                />
+              </div>
+
+              <div>
+                <p className="font-bold">Important</p>
+                <p className="text-sm">
+                  <ReactMarkdown>
+                    New 2024 NOTAM released! Familiarise yourself with the new
+                    procedures for this year! -- Click here to download: **[Full
+                    Digital
+                    Copy](https://www.eaa.org/~/media/B6C8744689624E2C9A424352E42C3EA7.ashx)**
+                  </ReactMarkdown>{" "}
+                </p>
+              </div>
             </div>
           </div>
         </div>
+        <CurrentSituationBox />
+        <ApproachStage
+          stage={stages[currentStage]}
+          onNext={handleNext}
+          onPrev={handlePrev}
+        />
       </div>
-      <Timeline currentStage={currentStage} />
-      <ApproachMap />
-      <ApproachStage 
-        stage={stages[currentStage]}
-        onNext={handleNext}
-        onPrev={handlePrev}
-      />
-      <div className="text-center text-gray-500">
-        Stage {currentStage + 1} of {stages.length}
-      </div>
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={settings}
-        onSettingChange={handleSettingChange}
-      />
-      {settings.audioEnabled && (
-        <div className="fixed bottom-4 right-4 bg-blue-500 text-white p-2 rounded-full">
-          <i className="fas fa-volume-up"></i>
-        </div>
-      )}
     </div>
   );
 };
