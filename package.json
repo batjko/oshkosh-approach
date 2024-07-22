@@ -1,5 +1,5 @@
 {
-  "name": "fisk-approach-guide",
+  "name": "eaa-oshkosh-approach-guide",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -19,6 +19,7 @@
     "@remix-run/serve": "^2.10.3",
     "isbot": "^4.1.0",
     "leaflet": "^1.9.4",
+    "posthog-js": "^1.148.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",
