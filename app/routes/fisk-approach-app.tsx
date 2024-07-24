@@ -6,6 +6,7 @@ import {
   faChevronRight,
   faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
+import { IconName } from "@fortawesome/fontawesome-svg-core";
 import ReactMarkdown from "react-markdown";
 import { notamList } from "./notamList.js";
 import "../approach.css";
@@ -77,7 +78,7 @@ const Timeline = ({ currentStage, onStageClick }: TimelineProps) => {
           {timelineData.map((stage, index) => (
             <a
               key={index}
-              href={`#stage-${index}`}
+              href={`#stage-${index+1}`}
               role="button"
               tabIndex={0}
               className={`flex items-center mb-2 ${
@@ -122,7 +123,7 @@ interface Stage {
   instructions: { text: string; icon: IconName }[];
   detailedInfo: string;
   nextStepPrep: string;
-  timelinePosition: number;
+  timelinePosition: string;
 }
 
 interface ApproachStageProps {
@@ -132,6 +133,7 @@ interface ApproachStageProps {
 }
 
 const ApproachStage = ({ stage, onNext, onPrev }: ApproachStageProps) => {
+  const currentStageIndex = stages.findIndex(s => s.title === stage.title);
   return (
     <div className="card bg-base-100 shadow-xl mb-4">
       <div className="card-body">
@@ -167,14 +169,20 @@ const ApproachStage = ({ stage, onNext, onPrev }: ApproachStageProps) => {
           </div>
         </div>
         <div className="flex justify-between mt-4">
-          <button onClick={onPrev} className="btn btn-outline">
-            <FontAwesomeIcon icon={faChevronLeft} className="w-4 h-4 mr-2" />
-            Prev
-          </button>
-          <button onClick={onNext} className="btn btn-primary">
-            Next
-            <FontAwesomeIcon icon={faChevronRight} className="w-4 h-4 ml-2" />
-          </button>
+          {currentStageIndex > 0 ? (
+            <a href={`#stage-${currentStageIndex}`} onClick={onPrev} className="btn btn-outline">
+              <FontAwesomeIcon icon={faChevronLeft} className="w-4 h-4 mr-2" />
+              Prev
+            </a>
+          ) : (
+            <div></div>
+          )}
+          {currentStageIndex < stages.length - 1 && (
+            <a href={`#stage-${currentStageIndex + 1}`} onClick={onNext} className="btn btn-primary">
+              Next
+              <FontAwesomeIcon icon={faChevronRight} className="w-4 h-4 ml-2" />
+            </a>
+          )}
         </div>
       </div>
     </div>
