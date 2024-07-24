@@ -1,20 +1,13 @@
-/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
-/* eslint-disable jsx-a11y/click-events-have-key-events */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { stages } from "./stages";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
   faChevronRight,
-  faCog,
   faInfoCircle,
-  faVolumeUp,
 } from "@fortawesome/free-solid-svg-icons";
-import { IconName } from "@fortawesome/fontawesome-svg-core";
 import ReactMarkdown from "react-markdown";
-
 import { notamList } from "./notamList.js";
-
 import "../approach.css";
 
 const standingInstructions = [
@@ -82,8 +75,9 @@ const Timeline = ({ currentStage, onStageClick }: TimelineProps) => {
         <h3 className="card-title text-center">Approach</h3>
         <div className="flex flex-col mt-8">
           {timelineData.map((stage, index) => (
-            <div
+            <a
               key={index}
+              href={`#stage-${index}`}
               role="button"
               tabIndex={0}
               className={`flex items-center mb-2 ${
@@ -108,16 +102,17 @@ const Timeline = ({ currentStage, onStageClick }: TimelineProps) => {
               </div>
               <div className="ml-2 flex flex-col">
                 <p className="text-base">{stage.name}</p>
-                <p className="text-xs text-base-content text-opacity-50">{stage.progress}</p>
+                <p className="text-xs text-base-content text-opacity-50">
+                  {stage.progress}
+                </p>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </div>
       <div className="text-center text-base-content mt-4 mb-2">
-          Stage {currentStage + 1} of {stages.length}
+        Stage {currentStage + 1} of {stages.length}
       </div>
-
     </div>
   );
 };
@@ -196,7 +191,7 @@ const FiskApproachApp = () => {
   const handleStageClick = (stageIndex: number) => setCurrentStage(stageIndex);
 
   return (
-    <div className="min-h-screen bg-base-200 p-4 grid grid-cols-4 gap-4">
+    <div className="min-h-screen bg-base-200 p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
       <div className="col-span-1">
         <div className="flex flex-col justify-between h-full">
           <div>
@@ -224,12 +219,9 @@ const FiskApproachApp = () => {
               </div>
             </div>
           </div>
-          {/* <div className="text-center text-base-content mt-4">
-            Stage {currentStage + 1} of {stages.length}
-          </div> */}
         </div>
       </div>
-      <div className="col-span-3">
+      <div className="col-span-1 md:col-span-3">
         <div className="mb-4">
           <div className="alert alert-warning">
             <div className="flex">
