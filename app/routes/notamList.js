@@ -1,7 +1,7 @@
 export const rawNotamList = {
   "pageSize": 50,
   "pageNum": 1,
-  "totalCount": 25,
+  "totalCount": 24,
   "totalPages": 1,
   "items": [
     {
@@ -1606,100 +1606,6 @@ export const rawNotamList = {
       "type": "Feature",
       "properties": {
         "coreNOTAMData": {
-          "notamEvent": { "scenario": "504" },
-          "notam": {
-            "id": "NOTAM_1_73087494",
-            "number": "07/064",
-            "type": "N",
-            "issued": "2024-07-18T15:50:00.000Z",
-            "affectedFIR": "ZAU",
-            "minimumFL": "000",
-            "maximumFL": "999",
-            "location": "OSH",
-            "effectiveStart": "2024-07-23T04:00:00.000Z",
-            "effectiveEnd": "2024-07-23T10:00:00.000Z",
-            "text": "COM REMOTE COM OUTLET 122.1 U/S",
-            "classification": "DOM",
-            "accountId": "OSH",
-            "lastUpdated": "2024-07-18T15:50:00.000Z",
-            "icaoLocation": "KOSH",
-            "coordinates": "4359N08833W",
-            "radius": "5"
-          },
-          "notamTranslation": [
-            {
-              "type": "LOCAL_FORMAT",
-              "simpleText": "!OSH 07/064 OSH COM REMOTE COM OUTLET 122.1 U/S 2407230400-2407231000"
-            },
-            {
-              "type": "ICAO",
-              "formattedText": "07/064 NOTAMN\nQ) KZAU/QCAAS/IV/B/AE/000/999/4359N08833W025\nA) KOSH\nB) 2407230400\nC) 2407231000\nE) REMOTE COM OUTLET 122.1 U/S"
-            }
-          ]
-        }
-      },
-      "geometry": {
-        "type": "GeometryCollection",
-        "geometries": [
-          {
-            "type": "Point",
-            "additionalGeometryData": {},
-            "coordinates": [-88.5569348611111, 43.9844911388889]
-          }
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "coreNOTAMData": {
-          "notamEvent": { "scenario": "504" },
-          "notam": {
-            "id": "NOTAM_1_73100774",
-            "number": "07/065",
-            "type": "N",
-            "issued": "2024-07-19T20:41:00.000Z",
-            "affectedFIR": "ZAU",
-            "minimumFL": "000",
-            "maximumFL": "999",
-            "location": "OSH",
-            "effectiveStart": "2024-07-23T04:00:00.000Z",
-            "effectiveEnd": "2024-07-23T10:00:00.000Z",
-            "text": "COM REMOTE COM OUTLET 122.3 U/S",
-            "classification": "DOM",
-            "accountId": "OSH",
-            "lastUpdated": "2024-07-19T20:41:00.000Z",
-            "icaoLocation": "KOSH",
-            "coordinates": "4359N08833W",
-            "radius": "5"
-          },
-          "notamTranslation": [
-            {
-              "type": "LOCAL_FORMAT",
-              "simpleText": "!OSH 07/065 OSH COM REMOTE COM OUTLET 122.3 U/S 2407230400-2407231000"
-            },
-            {
-              "type": "ICAO",
-              "formattedText": "07/065 NOTAMN\nQ) KZAU/QCAAS/IV/B/AE/000/999/4359N08833W025\nA) KOSH\nB) 2407230400\nC) 2407231000\nE) REMOTE COM OUTLET 122.3 U/S"
-            }
-          ]
-        }
-      },
-      "geometry": {
-        "type": "GeometryCollection",
-        "geometries": [
-          {
-            "type": "Point",
-            "additionalGeometryData": {},
-            "coordinates": [-88.5569348611111, 43.9844911388889]
-          }
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "coreNOTAMData": {
           "notamEvent": { "scenario": "802" },
           "notam": {
             "id": "NOTAM_1_73101432",
@@ -1738,9 +1644,57 @@ export const rawNotamList = {
           }
         ]
       }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "coreNOTAMData": {
+          "notamEvent": { "scenario": "504" },
+          "notam": {
+            "id": "NOTAM_1_73132297",
+            "number": "07/070",
+            "type": "N",
+            "issued": "2024-07-23T17:27:00.000Z",
+            "affectedFIR": "ZAU",
+            "minimumFL": "000",
+            "maximumFL": "999",
+            "location": "OSH",
+            "effectiveStart": "2024-07-24T04:00:00.000Z",
+            "effectiveEnd": "2024-07-24T10:00:00.000Z",
+            "text": "COM REMOTE COM OUTLET 122.3 U/S",
+            "classification": "DOM",
+            "accountId": "OSH",
+            "lastUpdated": "2024-07-23T17:27:00.000Z",
+            "icaoLocation": "KOSH",
+            "coordinates": "4359N08833W",
+            "radius": "5"
+          },
+          "notamTranslation": [
+            {
+              "type": "LOCAL_FORMAT",
+              "simpleText": "!OSH 07/070 OSH COM REMOTE COM OUTLET 122.3 U/S 2407240400-2407241000"
+            },
+            {
+              "type": "ICAO",
+              "formattedText": "07/070 NOTAMN\nQ) KZAU/QCAAS/IV/B/AE/000/999/4359N08833W025\nA) KOSH\nB) 2407240400\nC) 2407241000\nE) REMOTE COM OUTLET 122.3 U/S"
+            }
+          ]
+        }
+      },
+      "geometry": {
+        "type": "GeometryCollection",
+        "geometries": [
+          {
+            "type": "Point",
+            "additionalGeometryData": {},
+            "coordinates": [-88.5569348611111, 43.9844911388889]
+          }
+        ]
+      }
     }
   ]
 }
+
 
 
 export const notamList = rawNotamList.items
