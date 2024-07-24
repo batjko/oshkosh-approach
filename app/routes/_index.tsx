@@ -6,15 +6,17 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
 import type { LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+// import { serverOnly$ } from "vite-env-only/macros";
 
-import { getNotamsFromEAA, TransformedNotam } from "./notamList.server";
-import FiskApproachApp from './fisk-approach-app';
+import { getNotamsFromEAA, TransformedNotam } from "../.server/notamList";
+import FiskApproachApp from './fisk-approach/fisk-approach-app';
 
 library.add(fas);
 
 export const loader: LoaderFunction = async () => {
   console.log("Loading NOTAMs...");
   const notamList: TransformedNotam[] = await getNotamsFromEAA();
+  
   const result = await json({ notamList })
 
   return result;

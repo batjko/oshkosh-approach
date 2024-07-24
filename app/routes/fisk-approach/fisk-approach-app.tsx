@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { stages } from "./stages";
+import { stages } from "../stages";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
@@ -11,7 +11,7 @@ import ReactMarkdown from "react-markdown";
 
 // const ReactMarkdown = ({ children }) => <div><p>HELLO</p></div>
 
-import "../approach.css";
+import "./approach.css";
 
 const standingInstructions = [
   "ATIS: **125.9** - Fisk Approach: **120.7**",
@@ -39,7 +39,7 @@ const CurrentSituationBox = ({ notamList: { notamList } }) => {
                 </tr>
               </thead>
               <tbody>
-                {notamList ? (
+                {notamList && notamList.length > 0 ? (
                   notamList.map((notam, index) => (
                     <tr
                       key={notam.id}
@@ -54,7 +54,7 @@ const CurrentSituationBox = ({ notamList: { notamList } }) => {
                     </tr>
                   ))
                 ) : (
-                  <p>Loading...</p>
+                  <p>No data...</p>
                 )}
               </tbody>
             </table>
