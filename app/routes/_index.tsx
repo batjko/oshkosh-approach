@@ -1,30 +1,37 @@
 import { useEffect } from "react";
-import type { LinksFunction } from "@remix-run/node";
 import type { MetaFunction } from '@remix-run/react';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { fas } from '@fortawesome/free-solid-svg-icons';
-import leafletStyles from "leaflet/dist/leaflet.css?url";
+
+import type { LoaderFunction } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+
+import { getNotamsFromEAA, TransformedNotam } from "./notamList.server";
 import FiskApproachApp from './fisk-approach-app';
 
-// Add all icons to the library so you can use them in your components
 library.add(fas);
-export const links: LinksFunction = () => [
-  {
-    rel: "stylesheet",
-    href: leafletStyles,
-  },
-];
+
+export const loader: LoaderFunction = async () => {
+  console.log("Loading NOTAMs...");
+  const notamList: TransformedNotam[] = await getNotamsFromEAA();
+  const result = await json({ notamList })
+
+  return result;
+};
 
 export const meta: MetaFunction = () => {
   return [
     { charset: "utf-8"},
-    { title: "Fisk Approach Guide" },
+    { title: "EAA Airventure Oshkosh Approach Guide" },
     { viewport: "width=device-width,initial-scale=1" },
-    { name: "description", content: "A comprehensive guide for the Fisk approach." },
+    { name: "description", content: "A comprehensive guide for the Fisk approach to EAA Airventure in Oshkosh." },
   ];
 };
 
 export default function Index() {
+  const notamList = useLoaderData<typeof loader>()
+  
   // Register service worker for PWA
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -40,7 +47,7 @@ export default function Index() {
  
   return (
     <div>
-      <FiskApproachApp />
+      <FiskApproachApp notamList={notamList} />
     </div>
   );
 }

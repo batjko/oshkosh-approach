@@ -8,7 +8,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { IconName } from "@fortawesome/fontawesome-svg-core";
 import ReactMarkdown from "react-markdown";
-import { notamList } from "./notamList.js";
+
+// const ReactMarkdown = ({ children }) => <div><p>HELLO</p></div>
+
 import "../approach.css";
 
 const standingInstructions = [
@@ -20,11 +22,11 @@ const standingInstructions = [
   ATC activates them on ATIS during highest traffic flows.`,
 ];
 
-const CurrentSituationBox = () => {
+const CurrentSituationBox = ({ notamList: { notamList } }) => {
   return (
     <div className="card bg-base-100 shadow-md mb-4">
       <div className="card-body">
-        <h2 className="card-title">Current NOTAMs</h2>
+        <h2 className="card-title">Current NOTAMs ({ notamList?.length })</h2>
         <div className="flex flex-col -mx-2" style={{ minHeight: "300px" }}>
           <div className="overflow-x-auto">
             <table className="table table-xs w-full mt-4">
@@ -37,17 +39,23 @@ const CurrentSituationBox = () => {
                 </tr>
               </thead>
               <tbody>
-                {notamList.map((notam, index) => (
-                  <tr
-                    key={notam.id}
-                    className={index % 2 === 0 ? "bg-base-200" : "bg-base-100"}
-                  >
-                    <td>{notam.number}</td>
-                    <td>{notam.type}</td>
-                    <td>{notam.effectiveEnd}</td>
-                    <td className="text-base-content">{notam.text}</td>
-                  </tr>
-                ))}
+                {notamList ? (
+                  notamList.map((notam, index) => (
+                    <tr
+                      key={notam.id}
+                      className={
+                        index % 2 === 0 ? "bg-base-200" : "bg-base-100"
+                      }
+                    >
+                      <td>{notam.number}</td>
+                      <td>{notam.type}</td>
+                      <td>{notam.effectiveEnd}</td>
+                      <td className="text-base-content">{notam.text}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <p>Loading...</p>
+                )}
               </tbody>
             </table>
           </div>
@@ -78,7 +86,7 @@ const Timeline = ({ currentStage, onStageClick }: TimelineProps) => {
           {timelineData.map((stage, index) => (
             <a
               key={index}
-              href={`#stage-${index+1}`}
+              href={`#stage-${index + 1}`}
               role="button"
               tabIndex={0}
               className={`flex items-center mb-2 ${
@@ -133,7 +141,7 @@ interface ApproachStageProps {
 }
 
 const ApproachStage = ({ stage, onNext, onPrev }: ApproachStageProps) => {
-  const currentStageIndex = stages.findIndex(s => s.title === stage.title);
+  const currentStageIndex = stages.findIndex((s) => s.title === stage.title);
   return (
     <div className="card bg-base-100 shadow-xl mb-4">
       <div className="card-body">
@@ -170,7 +178,11 @@ const ApproachStage = ({ stage, onNext, onPrev }: ApproachStageProps) => {
         </div>
         <div className="flex justify-between mt-4">
           {currentStageIndex > 0 ? (
-            <a href={`#stage-${currentStageIndex}`} onClick={onPrev} className="btn btn-outline">
+            <a
+              href={`#stage-${currentStageIndex}`}
+              onClick={onPrev}
+              className="btn btn-outline"
+            >
               <FontAwesomeIcon icon={faChevronLeft} className="w-4 h-4 mr-2" />
               Prev
             </a>
@@ -178,7 +190,11 @@ const ApproachStage = ({ stage, onNext, onPrev }: ApproachStageProps) => {
             <div></div>
           )}
           {currentStageIndex < stages.length - 1 && (
-            <a href={`#stage-${currentStageIndex + 1}`} onClick={onNext} className="btn btn-primary">
+            <a
+              href={`#stage-${currentStageIndex + 1}`}
+              onClick={onNext}
+              className="btn btn-primary"
+            >
               Next
               <FontAwesomeIcon icon={faChevronRight} className="w-4 h-4 ml-2" />
             </a>
@@ -189,7 +205,7 @@ const ApproachStage = ({ stage, onNext, onPrev }: ApproachStageProps) => {
   );
 };
 
-const FiskApproachApp = () => {
+const FiskApproachApp = ({ notamList }) => {
   const [currentStage, setCurrentStage] = useState(0);
 
   const handleNext = () =>
@@ -254,7 +270,7 @@ const FiskApproachApp = () => {
             </div>
           </div>
         </div>
-        <CurrentSituationBox />
+        <CurrentSituationBox notamList={notamList} />
         <ApproachStage
           stage={stages[currentStage]}
           onNext={handleNext}

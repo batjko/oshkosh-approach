@@ -3,10 +3,10 @@ self.addEventListener('install', (event) => {
       caches.open('eaa-approach-cache').then((cache) => {
         return cache.addAll([
           '/',
-          '/index.html',
+          // '/index.html',
           '/manifest.json',
-          '/icons/icon-192x192.png',
-          '/icons/icon-512x512.png',
+          // '/icons/icon-192x192.png',
+          // '/icons/icon-512x512.png',
           // Add other assets you want to cache
         ]);
       })
