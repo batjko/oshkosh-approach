@@ -15,7 +15,7 @@ import "./approach.css";
 
 const standingInstructions = [
   "ATIS: **125.9** - Fisk Approach: **120.7**",
-  "NOAA Weather Radio frequency for southern Winnebago County: **162.500**",
+  "Holding zones include **Ripon**, **Green Lake**, and **Puckaway Lake**, as well as an emergency landing turf strip south of Fisk.",
   "No FISK arrivals before **8 a.m. CDT on Thursday, July 25.**",
   `Transition points approaching Oshkosh from the west:    
   **Endeavor Bridge**, **Puckaway Lake**, and **Green Lake**. 
