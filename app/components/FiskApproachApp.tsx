@@ -62,7 +62,7 @@ export const FiskApproachApp = ({ notamList }: FiskApproachAppProps) => {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-primary">
-                  EAA Oshkosh 2024 Approach Guide
+                  EAA AirVenture - Oshkosh Approach Guide
                 </h1>
                 <p className="text-sm text-base-content/70">
                   Interactive guide for the Fisk Approach
