@@ -11,7 +11,7 @@ import { HorizontalTimeline } from './timeline/HorizontalTimeline'
 import { StageCard } from './stages/StageCard'
 import { NotamList } from './notams/NotamList'
 import { StandingInstructions } from './ui/StandingInstructions'
-import { AircraftProfile } from './ui/AircraftProfile'
+// import { AircraftProfile } from './ui/AircraftProfile' // Hidden until integrated
 import { OfflineIndicator } from './ui/OfflineIndicator'
 import { MapToggle } from './ui/MapToggle'
 import { MapFallback } from './map/MapFallback'
@@ -39,7 +39,7 @@ interface FiskApproachAppProps {
 }
 
 export const FiskApproachApp = ({ notamList }: FiskApproachAppProps) => {
-  const { currentStage, mode, theme, enableMap, setTheme } = useAppStore()
+  const { currentStage, mode, theme, enableMap } = useAppStore()
   
   // Initialize geolocation tracking
   useGeolocation()
@@ -132,7 +132,7 @@ export const FiskApproachApp = ({ notamList }: FiskApproachAppProps) => {
 
             {/* Right Column - Standing Instructions and Summary */}
             <div className="space-y-6">
-              <AircraftProfile />
+              {/* <AircraftProfile /> Hidden until integrated */}
               <VisualAids />
               <StandingInstructions />
               

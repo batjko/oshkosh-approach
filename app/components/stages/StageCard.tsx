@@ -100,7 +100,7 @@ export const StageCard = ({ stage }: StageCardProps) => {
         </div>
 
         {/* Detailed Information - Collapsible in pre-flight, hidden in in-flight */}
-        {(showDetails || mode === 'pre-flight') && (
+        {showDetails && mode === 'pre-flight' && (
           <div className="mt-6 space-y-4">
             <div className="divider">Details</div>
             

@@ -141,10 +141,11 @@ export const VisualAids = () => {
             <button
               key={diagram.id}
               onClick={() => setSelectedDiagram(diagram.id)}
-              className="btn btn-outline btn-sm justify-start"
+              className="btn btn-outline btn-sm justify-start text-left"
+              title={diagram.title}
             >
-              <MdInfo className="w-4 h-4" />
-              {diagram.title}
+              <MdInfo className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate">{diagram.title}</span>
             </button>
           ))}
         </div>
