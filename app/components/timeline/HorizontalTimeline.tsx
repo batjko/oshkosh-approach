@@ -56,10 +56,10 @@ export const HorizontalTimeline = () => {
         </div>
         
         {/* Timeline items */}
-        <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-thin scrollbar-thumb-base-300">
-          <div className="flex items-center gap-3 min-w-max pb-2">
+        <div ref={scrollContainerRef} className="overflow-x-auto scrollbar-thin scrollbar-thumb-base-300 -mx-4 px-4">
+          <div className="flex items-center gap-3 min-w-max py-3 px-2">
             {timelineData.map((stage, index) => (
-              <div key={index} className="flex items-center">
+              <div key={index} className={`flex items-center ${index === 0 ? 'ml-2' : ''} ${index === timelineData.length - 1 ? 'mr-2' : ''}`}>
                 <button
                   ref={stage.current ? currentStageRef : null}
                   onClick={() => setCurrentStage(index)}
