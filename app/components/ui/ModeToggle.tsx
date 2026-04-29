@@ -1,24 +1,46 @@
+import { MdFlight, MdMenuBook, MdLock } from 'react-icons/md'
 import { useAppStore } from '~/store/useAppStore'
-import { MdFlightTakeoff, MdMap } from 'react-icons/md'
+import { isFlightDayUnlocked, notice } from '~/content/oshkosh'
 
 export const ModeToggle = () => {
-  const { mode, setMode } = useAppStore()
+  const mode = useAppStore((s) => s.mode)
+  const setMode = useAppStore((s) => s.setMode)
+  const acknowledged = useAppStore((s) => s.noticeYearAcknowledged)
+  const inFlightAllowed =
+    isFlightDayUnlocked() || acknowledged === notice.requiredYear
 
   return (
-    <div className="join">
+    <div className="join" role="group" aria-label="App mode">
       <button
-        className={`btn join-item ${mode === 'pre-flight' ? 'btn-primary' : 'btn-outline'}`}
+        type="button"
+        className={`btn btn-sm join-item gap-1 ${
+          mode === 'pre-flight' ? 'btn-primary' : 'btn-ghost'
+        }`}
         onClick={() => setMode('pre-flight')}
+        aria-pressed={mode === 'pre-flight'}
       >
-        <MdMap className="h-4 w-4 mr-2" />
-        Pre-Flight
+        <MdMenuBook className="h-4 w-4" /> Plan
       </button>
       <button
-        className={`btn join-item ${mode === 'in-flight' ? 'btn-primary' : 'btn-outline'}`}
-        onClick={() => setMode('in-flight')}
+        type="button"
+        className={`btn btn-sm join-item gap-1 ${
+          mode === 'in-flight' ? 'btn-primary' : 'btn-ghost'
+        } ${!inFlightAllowed ? 'btn-disabled' : ''}`}
+        onClick={() => inFlightAllowed && setMode('in-flight')}
+        aria-pressed={mode === 'in-flight'}
+        aria-disabled={!inFlightAllowed}
+        title={
+          inFlightAllowed
+            ? 'Switch to in-flight mode'
+            : `Acknowledge the ${notice.requiredYear} Notice to enable in-flight mode`
+        }
       >
-        <MdFlightTakeoff className="h-4 w-4 mr-2" />
-        In-Flight
+        {inFlightAllowed ? (
+          <MdFlight className="h-4 w-4" />
+        ) : (
+          <MdLock className="h-4 w-4" />
+        )}
+        Flight
       </button>
     </div>
   )

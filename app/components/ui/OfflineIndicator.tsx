@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MdWifiOff, MdWifi } from 'react-icons/md'
+import { MdWifiOff } from 'react-icons/md'
 
 export const OfflineIndicator = () => {
   const [isOnline, setIsOnline] = useState(

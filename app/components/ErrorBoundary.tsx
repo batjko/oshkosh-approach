@@ -1,4 +1,4 @@
-import { Component, ReactNode } from 'react'
+import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { MdError, MdRefresh } from 'react-icons/md'
 
 interface Props {
@@ -21,7 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo)
   }
 
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Something went wrong
               </h2>
               <p className="text-base-content/70 mt-2">
-                We're sorry, but an unexpected error occurred. Please try refreshing the page.
+                We&rsquo;re sorry, but an unexpected error occurred. Please try refreshing the page.
               </p>
               {this.state.error && (
                 <details className="collapse collapse-arrow bg-base-200 mt-4">

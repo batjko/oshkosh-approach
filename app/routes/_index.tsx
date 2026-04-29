@@ -1,55 +1,52 @@
-import { useEffect } from "react";
-import type { MetaFunction } from '@remix-run/react';
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { fas } from '@fortawesome/free-solid-svg-icons';
+import { useEffect } from 'react'
+import type { MetaFunction } from '@remix-run/react'
+import type { LoaderFunction, HeadersFunction } from '@remix-run/node'
+import { json } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
 
-import type { LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-// import { serverOnly$ } from "vite-env-only/macros";
+import { getKoshNotams, type NotamFetchResult } from '../.server/notamList'
+import { FiskApproachApp } from '~/components/FiskApproachApp'
 
-import { getNotamsFromEAA, TransformedNotam } from "../.server/notamList";
-import FiskApproachApp from './fisk-approach/fisk-approach-app';
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+  Pragma: 'no-cache',
+  Expires: '0'
+}
 
-library.add(fas);
+export const headers: HeadersFunction = () => NO_STORE_HEADERS
 
 export const loader: LoaderFunction = async () => {
-  console.log("Loading NOTAMs...");
-  const notamList: TransformedNotam[] = await getNotamsFromEAA();
-  
-  const result = await json({ notamList })
+  const result = await getKoshNotams()
+  return json(result, { headers: NO_STORE_HEADERS })
+}
 
-  return result;
-};
-
-export const meta: MetaFunction = () => {
-  return [
-    { charset: "utf-8"},
-    { title: "EAA Airventure Oshkosh Approach Guide" },
-    { viewport: "width=device-width,initial-scale=1" },
-    { name: "description", content: "A comprehensive guide for the Fisk approach to EAA Airventure in Oshkosh." },
-  ];
-};
+export const meta: MetaFunction = () => [
+  { charset: 'utf-8' },
+  { title: 'EAA AirVenture Oshkosh - Approach companion' },
+  { viewport: 'width=device-width,initial-scale=1, viewport-fit=cover' },
+  {
+    name: 'description',
+    content:
+      'Source-backed Fisk VFR arrival companion for EAA AirVenture Oshkosh 2026 - read the official Notice before you fly.'
+  }
+]
 
 export default function Index() {
-  const notamList = useLoaderData<typeof loader>()
-  
-  // Register service worker for PWA
+  const data = useLoaderData<typeof loader>() as NotamFetchResult
+
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then((registration) => {
-          console.log('Service Worker registered with scope:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
-        });
-    }
-  }, []);
- 
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .catch((err) => console.error('Service worker registration failed:', err))
+  }, [])
+
   return (
-    <div>
-      <FiskApproachApp notamList={notamList} />
-    </div>
-  );
+    <FiskApproachApp
+      notamList={data.notamList}
+      fetchedAt={data.fetchedAt}
+      source={data.source}
+      fetchError={data.error}
+    />
+  )
 }

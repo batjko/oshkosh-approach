@@ -1,147 +1,109 @@
 import { useEffect, useState } from 'react'
-import { useAppStore } from '~/store/useAppStore'
-import { stages } from '~/routes/stages'
+import type * as ReactLeaflet from 'react-leaflet'
 import { MdMyLocation, MdLocationOff, MdMap } from 'react-icons/md'
+import { phaseById, waypoints, waypointById } from '~/content/oshkosh'
+import type { LatLng, PhaseId } from '~/content/oshkosh'
+import { useAppStore } from '~/store/useAppStore'
 
-// Oshkosh approach waypoints (approximate coordinates)
-const waypoints = {
-  ripon: [43.8433, -88.8167] as [number, number],
-  fisk: [43.7702, -88.5494] as [number, number],
-  oshkosh: [43.9844, -88.5569] as [number, number],
-  greenLake: [43.8442, -88.9567] as [number, number],
-  puckawayLake: [43.6167, -89.1833] as [number, number],
-}
-
-// Railroad tracks route (simplified)
-const railroadRoute: [number, number][] = [
-  waypoints.ripon,
-  [43.8350, -88.7800],
-  [43.8200, -88.7400],
-  [43.8000, -88.6800],
-  [43.7850, -88.6200],
-  waypoints.fisk,
-]
-
-// Final approach path
-const finalApproachRoute: [number, number][] = [
-  waypoints.fisk,
-  [43.8200, -88.5600],
-  [43.9000, -88.5580],
-  waypoints.oshkosh,
-]
+type ReactLeafletModule = typeof ReactLeaflet
 
 interface ApproachMapProps {
   className?: string
 }
 
-export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
-  const { currentLocation, currentStage, setCurrentStage } = useAppStore()
-  const [mapComponents, setMapComponents] = useState<any>(null)
-  const [isClient, setIsClient] = useState(false)
-  const [loadError, setLoadError] = useState(false)
-  
-  // Center map based on current location or default to Oshkosh area
-  const mapCenter: [number, number] = currentLocation 
-    ? [currentLocation.lat, currentLocation.lng]
-    : waypoints.oshkosh
+const railroadRoute: LatLng[] = [
+  waypointById('vprip')!.position,
+  [43.835, -88.78],
+  [43.82, -88.74],
+  [43.8, -88.68],
+  [43.785, -88.62],
+  waypointById('vpfis')!.position
+]
 
-  // Optimized lazy loading with error handling
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !mapComponents) {
-      let cancelled = false
-      
-      const loadMapComponents = async () => {
-        try {
-          const [reactLeaflet, , leaflet] = await Promise.all([
-            import('react-leaflet'),
-            import('leaflet/dist/leaflet.css'),
-            import('leaflet')
-          ])
-          
-          if (cancelled) return
-          
-          // Fix default markers
-          delete (leaflet.Icon.Default.prototype as any)._getIconUrl
-          leaflet.Icon.Default.mergeOptions({
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-          })
-          
-          setMapComponents(reactLeaflet)
-          setIsClient(true)
-        } catch (error) {
-          console.error('Failed to load map components:', error)
-          if (!cancelled) setLoadError(true)
-        }
-      }
-      
-      loadMapComponents()
-      
-      return () => { cancelled = true }
-    }
-  }, [mapComponents])
+const finalApproachRoute: LatLng[] = [
+  waypointById('vpfis')!.position,
+  [43.82, -88.56],
+  [43.9, -88.558],
+  waypointById('kosh')!.position
+]
 
-  // Geofencing - check if user is near waypoints and auto-advance stages
-  useEffect(() => {
-    if (!currentLocation) return
-
-    const userLatLng = [currentLocation.lat, currentLocation.lng] as [number, number]
-    const proximityThreshold = 0.01 // Roughly 1km
-
-    // Check proximity to key waypoints and auto-advance stages
-    const checkProximity = (waypoint: [number, number], targetStage: number) => {
-      const distance = Math.sqrt(
-        Math.pow(userLatLng[0] - waypoint[0], 2) + 
-        Math.pow(userLatLng[1] - waypoint[1], 2)
-      )
-      
-      if (distance < proximityThreshold && currentStage < targetStage) {
-        setCurrentStage(targetStage)
-      }
-    }
-
-    // Auto-advance stages based on location
-    checkProximity(waypoints.ripon, 1) // Initial Contact Point
-    checkProximity(waypoints.fisk, 5) // Aircraft Type Identification
-    checkProximity(waypoints.oshkosh, 8) // Final Approach
-  }, [currentLocation, currentStage, setCurrentStage])
-
-  const getCurrentStageWaypoint = (): [number, number] | null => {
-    const stageWaypoints = [
-      null, // Pre-approach prep
-      waypoints.ripon, // Initial Contact Point
-      waypoints.ripon, // Speed, Altitude & Distance (still at Ripon)
-      waypoints.fisk, // Look for Landmarks
-      waypoints.fisk, // Radio Communication
-      waypoints.fisk, // Aircraft Type Identification
-      waypoints.fisk, // Runway Assignment
-      waypoints.oshkosh, // Final Approach
-      waypoints.oshkosh, // Go-Around
-      waypoints.oshkosh, // Taxi and Parking
-    ]
-    
-    return stageWaypoints[currentStage] || null
+const phaseFocusWaypointId = (phase: PhaseId): string | null => {
+  switch (phase) {
+    case 'preflight':
+    case 'enroute':
+      return null
+    case 'transition':
+      return 'vprip'
+    case 'ripon-to-fisk':
+      return 'vprip'
+    case 'at-fisk':
+      return 'vpfis'
+    case 'inbound-runway':
+      return 'kosh'
+    case 'ground':
+      return 'kosh'
+    case 'depart':
+      return 'kosh'
   }
+}
 
-  // Show loading or error state until components are ready
-  if (!isClient || !mapComponents) {
+export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
+  const location = useAppStore((s) => s.currentLocation)
+  const currentPhase = useAppStore((s) => s.currentPhase)
+  const [components, setComponents] = useState<ReactLeafletModule | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || components) return
+    let cancelled = false
+    const load = async () => {
+      try {
+        const [reactLeaflet, , leaflet] = await Promise.all([
+          import('react-leaflet'),
+          import('leaflet/dist/leaflet.css'),
+          import('leaflet')
+        ])
+        if (cancelled) return
+        delete (leaflet.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl
+        leaflet.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        })
+        setComponents(reactLeaflet)
+      } catch (err) {
+        console.error('Failed to load map:', err)
+        if (!cancelled) setError(true)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [components])
+
+  const focusId = phaseFocusWaypointId(currentPhase)
+  const focusWaypoint = focusId ? waypointById(focusId) : null
+  const center: LatLng =
+    (location ? [location.lat, location.lng] : focusWaypoint?.position) ??
+    waypointById('kosh')!.position
+
+  if (!components) {
     return (
-      <div className={`relative w-full h-full ${className} flex items-center justify-center bg-base-200 rounded-lg`} style={{ minHeight: '300px' }}>
-        <div className="text-center p-8">
-          {loadError ? (
+      <div
+        className={`relative flex h-full w-full items-center justify-center rounded-cockpit bg-base-200 ${className}`}
+        style={{ minHeight: 280 }}
+      >
+        <div className="text-center">
+          {error ? (
             <>
-              <MdLocationOff className="h-12 w-12 mx-auto text-error mb-4" />
-              <p className="text-base-content/60 mb-2">Unable to load map</p>
-              <p className="text-sm text-base-content/50">Check your connection and try again</p>
+              <MdLocationOff className="mx-auto h-10 w-10 text-error" />
+              <p className="mt-2 text-sm text-base-content/70">Unable to load map.</p>
             </>
           ) : (
             <>
-              <MdMap className="h-12 w-12 mx-auto text-base-content/40 mb-4 animate-pulse" />
-              <p className="text-base-content/60">Loading Map...</p>
-              <div className="mt-4">
-                <span className="loading loading-spinner loading-sm text-primary"></span>
-              </div>
+              <MdMap className="mx-auto h-10 w-10 animate-pulse text-base-content/40" />
+              <p className="mt-2 text-sm text-base-content/60">Loading map...</p>
             </>
           )}
         </div>
@@ -149,132 +111,97 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
     )
   }
 
-  const { MapContainer, TileLayer, Marker, Popup, Polyline, Circle } = mapComponents
+  const { MapContainer, TileLayer, Marker, Popup, Polyline, Circle } = components
+  const phase = phaseById(currentPhase)
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
+    <div className={`relative h-full w-full ${className}`}>
       <MapContainer
-        center={mapCenter}
+        center={center}
         zoom={11}
-        style={{ height: '100%', width: '100%', minHeight: '300px' }}
+        style={{ height: '100%', width: '100%', minHeight: 280 }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        
-        {/* Railroad tracks route */}
         <Polyline
           positions={railroadRoute}
-          pathOptions={{ color: '#8B4513', weight: 3, dashArray: '10, 5' }}
+          pathOptions={{ color: '#7a5a2c', weight: 3, dashArray: '10, 5' }}
         />
-        
-        {/* Final approach route */}
         <Polyline
           positions={finalApproachRoute}
-          pathOptions={{ color: '#FF6B35', weight: 4 }}
+          pathOptions={{ color: '#c46a16', weight: 4 }}
         />
-        
-        {/* Waypoint markers */}
-        <Marker position={waypoints.ripon}>
-          <Popup>
-            <div className="text-center">
-              <h3 className="font-bold">Ripon</h3>
-              <p className="text-sm">Initial Contact Point</p>
-              <p className="text-xs">1,800 ft MSL</p>
-            </div>
-          </Popup>
-        </Marker>
-        
-        <Marker position={waypoints.fisk}>
-          <Popup>
-            <div className="text-center">
-              <h3 className="font-bold">Fisk</h3>
-              <p className="text-sm">Water Tower</p>
-              <p className="text-xs">Monitor 120.7</p>
-            </div>
-          </Popup>
-        </Marker>
-        
-        <Marker position={waypoints.oshkosh}>
-          <Popup>
-            <div className="text-center">
-              <h3 className="font-bold">Wittman Regional</h3>
-              <p className="text-sm">KOSH</p>
-              <p className="text-xs">Follow colored dots</p>
-            </div>
-          </Popup>
-        </Marker>
-        
-        {/* User location */}
-        {currentLocation && (
+        {waypoints.map((wp) => (
+          <Marker key={wp.id} position={wp.position}>
+            <Popup>
+              <div className="text-center text-xs">
+                <div className="font-bold">{wp.name}</div>
+                <p className="mt-0.5 text-[10px] text-base-content/70">
+                  {wp.description}
+                </p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+        {location && (
           <>
-            <Marker position={[currentLocation.lat, currentLocation.lng]}>
+            <Marker position={[location.lat, location.lng]}>
               <Popup>
-                <div className="text-center">
-                  <h3 className="font-bold">Your Location</h3>
-                  <p className="text-xs">Accuracy: ±{Math.round(currentLocation.accuracy)}m</p>
+                <div className="text-center text-xs">
+                  <div className="font-bold">Your position</div>
+                  <p>±{Math.round(location.accuracy)}m</p>
                 </div>
               </Popup>
             </Marker>
-            
-            {/* Accuracy circle */}
             <Circle
-              center={[currentLocation.lat, currentLocation.lng]}
-              radius={currentLocation.accuracy}
-              pathOptions={{ 
-                color: '#3B82F6', 
-                fillColor: '#3B82F6', 
+              center={[location.lat, location.lng]}
+              radius={location.accuracy}
+              pathOptions={{
+                color: '#1f4e8c',
+                fillColor: '#1f4e8c',
                 fillOpacity: 0.1,
                 weight: 2
               }}
             />
           </>
         )}
-        
-        {/* Current stage target waypoint highlight */}
-        {getCurrentStageWaypoint() && (
+        {focusWaypoint && (
           <Circle
-            center={getCurrentStageWaypoint()!}
+            center={focusWaypoint.position}
             radius={1000}
-            pathOptions={{ 
-              color: '#10B981', 
-              fillColor: '#10B981', 
-              fillOpacity: 0.2,
+            pathOptions={{
+              color: '#4f7a3a',
+              fillColor: '#4f7a3a',
+              fillOpacity: 0.18,
               weight: 3,
               dashArray: '5, 5'
             }}
           />
         )}
       </MapContainer>
-      
-      {/* Location status indicator */}
-      <div className="absolute top-4 right-4 z-[1000]">
-        <div className={`btn btn-sm ${currentLocation ? 'btn-success' : 'btn-error'}`}>
-          {currentLocation ? (
-            <>
-              <MdMyLocation className="w-4 h-4 mr-1" />
-              GPS Active
-            </>
+
+      <div className="pointer-events-none absolute inset-0 flex flex-col">
+        <div className="pointer-events-auto m-3 self-end rounded-full bg-base-100/90 px-3 py-1.5 text-xs shadow">
+          {location ? (
+            <span className="inline-flex items-center gap-1 text-success">
+              <MdMyLocation className="h-3.5 w-3.5" /> GPS
+            </span>
           ) : (
-            <>
-              <MdLocationOff className="w-4 h-4 mr-1" />
-              No GPS
-            </>
+            <span className="inline-flex items-center gap-1 text-base-content/60">
+              <MdLocationOff className="h-3.5 w-3.5" /> No GPS
+            </span>
           )}
         </div>
-      </div>
-      
-      {/* Stage indicator */}
-      <div className="absolute bottom-4 left-4 z-[1000]">
-        <div className="bg-base-100 shadow-lg rounded-lg p-3">
-          <div className="text-sm font-semibold text-primary">
-            Stage {currentStage + 1}: {stages[currentStage].title}
+        {phase && (
+          <div className="pointer-events-auto m-3 mt-auto self-start rounded-cockpit bg-base-100/95 px-3 py-2 text-xs shadow-cockpit">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+              Phase {phase.order + 1}
+            </div>
+            <div className="font-semibold">{phase.title}</div>
           </div>
-          <div className="text-xs text-base-content/70">
-            {stages[currentStage].timelinePosition}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

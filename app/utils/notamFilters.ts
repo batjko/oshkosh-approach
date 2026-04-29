@@ -1,4 +1,19 @@
-// NOTAM filtering and categorization utilities
+/**
+ * NOTAM filtering and priority categorisation for the Fisk arrival.
+ *
+ * Priority levels reflect operational impact for a VFR pilot inbound to
+ * KOSH during AirVenture week — NOT raw "is the word 'runway' present".
+ *
+ * - critical: arrival is blocked or substantially altered (closure, TFR,
+ *   IFR-only, NORDO disable). Demands action before launch / divert.
+ * - high:    affects the actual procedure or comms we use (FISK arrival,
+ *   RIPON, OSH tower / Fisk Approach freq changes, runway-specific
+ *   advisory during event window).
+ * - medium:  IAP/IFR procedural changes, ILS/VOR availability, alternate
+ *   field changes — context the pilot may want to know.
+ * - low:     distant obstacles, taxiway lighting, fuel availability,
+ *   routine equipment.
+ */
 
 export interface NotamPriority {
   level: 'critical' | 'high' | 'medium' | 'low'
@@ -6,109 +21,158 @@ export interface NotamPriority {
   icon: string
 }
 
-// Keywords that indicate critical NOTAMs
-const CRITICAL_KEYWORDS = [
-  'runway closed', 'airport closed', 'emergency', 'unsafe', 'dangerous',
-  'prohibited', 'restricted', 'closed', 'unavailable'
-]
+const CRITICAL = { level: 'critical', color: 'error', icon: 'warning' } as const
+const HIGH = { level: 'high', color: 'warning', icon: 'info' } as const
+const MEDIUM = { level: 'medium', color: 'info', icon: 'info-circle' } as const
+const LOW = { level: 'low', color: 'base-content', icon: 'circle' } as const
 
-// Keywords that indicate high priority NOTAMs
-const HIGH_PRIORITY_KEYWORDS = [
-  'runway', 'approach', 'departure', 'tower', 'frequency', 'navigation',
-  'lighting', 'obstruction', 'construction'
-]
-
-// Keywords that indicate medium priority NOTAMs
-const MEDIUM_PRIORITY_KEYWORDS = [
-  'taxiway', 'parking', 'fuel', 'service', 'weather', 'equipment'
+/**
+ * Closure / blocking conditions — the only signals that should ever
+ * reach the critical banner. Word-boundary anchored to avoid matching
+ * substrings like "closed-circuit" inside narrative text.
+ */
+const CRITICAL_PATTERNS = [
+  /\bAIRPORT\s+CLOSED\b/i,
+  /\bARPT\s+(CLOSED|CLSD|CLD)\b/i,
+  /\bAERODROME\s+(CLOSED|CLSD)\b/i,
+  /\bAD\s+(CLOSED|CLSD)\b/i,
+  /\bRWY\s+\d+[LRC]?(?:\s*\/\s*\d+[LRC]?)?\s+(CLOSED|CLSD)\b/i,
+  /\bRUNWAY\s+\d+[LRC]?(?:\s*\/\s*\d+[LRC]?)?\s+CLOSED\b/i,
+  /\bFLIGHT\s+RESTRICTION\b/i,
+  /\bTFR\b/i,
+  /\bIFR\s+ONLY\b/i,
+  /\bVFR\s+(?:ARRIVALS?\s+)?(?:NOT\s+PERMITTED|PROHIBITED|SUSPENDED)\b/i,
+  /\bAIRSPACE\s+CLOSED\b/i,
+  /\bEMERGENCY\b/i
 ]
 
 /**
- * Categorize NOTAM priority based on content
+ * Operationally relevant to the FISK VFR arrival. We match phrases
+ * specific to the arrival, the comms strip, or runways used during
+ * event week.
  */
+const HIGH_PATTERNS = [
+  /\bFISK\b/i,
+  /\bRIPON\b/i,
+  /\bAIRVENTURE\b/i,
+  /\bMASS\s+ARRIVAL\b/i,
+  /\bATIS\s+\d{3}\.\d{1,3}\b/i,
+  /\bTOWER\s+\d{3}\.\d{1,3}\b/i,
+  /\b(?:OSH|KOSH)\s+TOWER\b/i,
+  /\bAPPROACH\s+\d{3}\.\d{1,3}\b/i,
+  /\bGROUND\s+\d{3}\.\d{1,3}\b/i,
+  /\bTRANSPONDER\b/i,
+  /\bNORDO\b/i,
+  /\bWAIVER\b/i
+]
+
+/**
+ * IFR procedure or navaid changes, runway / ILS status. Useful context
+ * but not emergency.
+ */
+const MEDIUM_PATTERNS = [
+  /\bIAP\b/i,
+  /\bILS\b/i,
+  /\bLOC\s+(BC\s+)?RWY\b/i,
+  /\bVOR\s+RWY\b/i,
+  /\bGPS\s+RWY\b/i,
+  /\bRNAV\b/i,
+  /\bMINIMUMS\b/i,
+  /\bMDA\b/i,
+  /\bNAVAID\b/i,
+  /\bDME\b/i,
+  /\bSID\b/i,
+  /\bSTAR\b/i
+]
+
+const matchAny = (text: string, patterns: RegExp[]): boolean =>
+  patterns.some((p) => p.test(text))
+
 export const categorizeNotamPriority = (notamText: string): NotamPriority => {
-  const lowerText = notamText.toLowerCase()
-  
-  if (CRITICAL_KEYWORDS.some(keyword => lowerText.includes(keyword))) {
-    return {
-      level: 'critical',
-      color: 'error',
-      icon: 'warning'
-    }
-  }
-  
-  if (HIGH_PRIORITY_KEYWORDS.some(keyword => lowerText.includes(keyword))) {
-    return {
-      level: 'high',
-      color: 'warning',
-      icon: 'info'
-    }
-  }
-  
-  if (MEDIUM_PRIORITY_KEYWORDS.some(keyword => lowerText.includes(keyword))) {
-    return {
-      level: 'medium',
-      color: 'info',
-      icon: 'info-circle'
-    }
-  }
-  
-  return {
-    level: 'low',
-    color: 'base-content',
-    icon: 'circle'
-  }
+  if (!notamText) return LOW
+  if (matchAny(notamText, CRITICAL_PATTERNS)) return CRITICAL
+  if (matchAny(notamText, HIGH_PATTERNS)) return HIGH
+  if (matchAny(notamText, MEDIUM_PATTERNS)) return MEDIUM
+  return LOW
 }
 
-/**
- * Filter NOTAMs by type
- */
-export const filterNotamsByType = (notams: any[], type: string) => {
+interface NotamLike {
+  text: string
+  number: string
+  type: string
+}
+
+export const filterNotamsByType = <T extends NotamLike>(
+  notams: T[],
+  type: string
+): T[] => {
   if (type === 'All') return notams
-  return notams.filter(notam => notam.type === type)
+  return notams.filter((notam) => notam.type === type)
 }
 
-/**
- * Filter NOTAMs by search term
- */
-export const filterNotamsBySearch = (notams: any[], searchTerm: string) => {
+export const filterNotamsBySearch = <T extends NotamLike>(
+  notams: T[],
+  searchTerm: string
+): T[] => {
   if (!searchTerm) return notams
-  
-  const lowerSearch = searchTerm.toLowerCase()
-  return notams.filter(notam => 
-    notam.text.toLowerCase().includes(lowerSearch) ||
-    notam.number.toLowerCase().includes(lowerSearch) ||
-    notam.type.toLowerCase().includes(lowerSearch)
+  const lower = searchTerm.toLowerCase()
+  return notams.filter(
+    (notam) =>
+      notam.text.toLowerCase().includes(lower) ||
+      notam.number.toLowerCase().includes(lower) ||
+      notam.type.toLowerCase().includes(lower)
   )
 }
 
-/**
- * Get critical NOTAMs for in-flight display
- */
-export const getCriticalNotams = (notams: any[]) => {
-  return notams
-    .map(notam => ({
-      ...notam,
-      priority: categorizeNotamPriority(notam.text)
-    }))
-    .filter(notam => notam.priority.level === 'critical' || notam.priority.level === 'high')
-    .sort((a, b) => {
-      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
-      return priorityOrder[a.priority.level] - priorityOrder[b.priority.level]
-    })
+const priorityOrder: Record<NotamPriority['level'], number> = {
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3
 }
 
 /**
- * Sort NOTAMs by priority
+ * Items that genuinely block or substantially alter the arrival. Used
+ * by `CriticalNotamBanner` — should be near-empty most of the time.
  */
-export const sortNotamsByPriority = (notams: any[]) => {
-  return notams
-    .map(notam => ({
+export const getCriticalNotams = <T extends NotamLike>(notams: T[]) =>
+  notams
+    .map((notam) => ({
       ...notam,
       priority: categorizeNotamPriority(notam.text)
     }))
-    .sort((a, b) => {
-      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
-      return priorityOrder[a.priority.level] - priorityOrder[b.priority.level]
-    })
-}
+    .filter((notam) => notam.priority.level === 'critical')
+    .sort(
+      (a, b) =>
+        priorityOrder[a.priority.level] - priorityOrder[b.priority.level]
+    )
+
+/**
+ * Critical + high. Used for the count badge on the NOTAMs tab — items
+ * the pilot should not skip past.
+ */
+export const getImportantNotams = <T extends NotamLike>(notams: T[]) =>
+  notams
+    .map((notam) => ({
+      ...notam,
+      priority: categorizeNotamPriority(notam.text)
+    }))
+    .filter(
+      (notam) =>
+        notam.priority.level === 'critical' || notam.priority.level === 'high'
+    )
+    .sort(
+      (a, b) =>
+        priorityOrder[a.priority.level] - priorityOrder[b.priority.level]
+    )
+
+export const sortNotamsByPriority = <T extends NotamLike>(notams: T[]) =>
+  notams
+    .map((notam) => ({
+      ...notam,
+      priority: categorizeNotamPriority(notam.text)
+    }))
+    .sort(
+      (a, b) =>
+        priorityOrder[a.priority.level] - priorityOrder[b.priority.level]
+    )

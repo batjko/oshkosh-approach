@@ -1,94 +1,243 @@
-export async function getNotamsFromEAA(): Promise<TransformedNotam[]> {
-  const apiUrl = 'https://external-api.faa.gov/notamapi/v1/notams';
-  const params = new URLSearchParams({
-    icaoLocation: 'KOSH',
-    responseFormat: 'geoJson',
-    pageSize: '50',
-    pageNum: '1'
-  });
+import dns from 'node:dns'
+import type {
+  RawFaaNotam,
+  RawFaaNotamSearchResponse
+} from './notamSearch.types'
 
-  const headers: Record<string, string> = {
-    'client_id': 'cd4f72a622e243eea887ec4ab641b325',
-    'client_secret': '7ffCE9446842440aA96e21b35fB1635F',
-  };
+// FAA Akamai edge resolves both A and AAAA. Some Node SSR runtimes hang
+// on IPv6 attempts before falling back to IPv4. Force IPv4-first so the
+// loader stays under timeout reliably.
+dns.setDefaultResultOrder('ipv4first')
 
+/**
+ * Public FAA NOTAM Search XHR endpoint. Same one the official FAA NOTAM
+ * Search UI calls. Returns JSON, no API key required.
+ *
+ * IMPORTANT: do not cache results in-process. Each loader call must hit
+ * fresh per the product requirement — pilots reload to refresh, NOTAMs
+ * are authoritative.
+ */
+const FAA_NOTAM_SEARCH_URL = 'https://notams.aim.faa.gov/notamSearch/search'
+const DEFAULT_ICAO = 'KOSH'
+const FETCH_TIMEOUT_MS = 20_000
+
+export interface TransformedNotam {
+  id: string
+  number: string
+  /** Bucketed type for filtering: 'Airport' | 'Runway' | 'Airspace' | 'Navigation' | 'Other'. */
+  type: string
+  /** ISO-8601 or `'PERM'`. */
+  effectiveStart: string
+  /** ISO-8601 or `'PERM'`. */
+  effectiveEnd: string
+  text: string
+  icaoLocation: string
+  airportName?: string
+}
+
+export interface NotamFetchResult {
+  notamList: TransformedNotam[]
+  /** ISO-8601 timestamp of when the loader fetched FAA. */
+  fetchedAt: string
+  /** Human-readable provenance string for UI. */
+  source: string
+  /** Populated only when fetch failed; UI surfaces it. */
+  error?: string
+}
+
+/** Map FAA `keyword` → our coarse type bucket. */
+const keywordToType = (keyword?: string): string => {
+  if (!keyword) return 'Other'
+  const k = keyword.toUpperCase()
+  if (k === 'AD' || k === 'AERODROME') return 'Airport'
+  if (k === 'RWY' || k === 'RUNWAY') return 'Runway'
+  if (k === 'TWY' || k === 'APRON' || k === 'PARKING') return 'Airport'
+  if (k === 'AIRSPACE' || k === 'TFR' || k === 'SPECIAL') return 'Airspace'
+  if (k === 'NAV' || k === 'COM' || k === 'IAP' || k === 'SID' || k === 'STAR') {
+    return 'Navigation'
+  }
+  if (k === 'OBST') return 'Airspace'
+  return 'Other'
+}
+
+/**
+ * Parse FAA-format dates: `MM/DD/YYYY HHmm` (Zulu) or the literal `'PERM'`.
+ * Returns ISO-8601 string or `'PERM'`.
+ */
+const parseFaaDate = (raw?: string): string => {
+  if (!raw) return ''
+  const trimmed = raw.trim()
+  if (trimmed.toUpperCase() === 'PERM') return 'PERM'
+
+  const m = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})(\d{2})$/)
+  if (m) {
+    const [, mm, dd, yyyy, hh, min] = m
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}:00Z`
+  }
+  // Defensive: fall back to Date parser, drop on failure.
+  const parsed = new Date(trimmed)
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString()
+}
+
+const isCurrentlyActive = (notam: TransformedNotam, now: Date): boolean => {
+  const start = notam.effectiveStart
+  const end = notam.effectiveEnd
+  if (start && start !== 'PERM') {
+    const startMs = Date.parse(start)
+    if (!Number.isNaN(startMs) && startMs > now.getTime()) return false
+  }
+  if (end === 'PERM' || end === '') return true
+  const endMs = Date.parse(end)
+  if (!Number.isNaN(endMs) && endMs < now.getTime()) return false
+  return true
+}
+
+/**
+ * FAA returns `plainLanguageMessage` either as text or as inline HTML
+ * (some NOTAMs embed `<table>` / `<b>` markup). Strip tags + decode the
+ * handful of entities the FAA actually emits so the UI never shows raw
+ * markup. Falls back to `traditionalMessage` when stripping leaves
+ * nothing useful.
+ */
+const cleanMessage = (
+  plain?: string,
+  traditional?: string
+): string => {
+  const stripTags = (input: string): string =>
+    input
+      .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+      .replace(/<\/(p|tr|table|tbody|thead|div|li)>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+
+  const cleanedPlain = plain ? stripTags(plain) : ''
+  if (cleanedPlain.length >= 16) return cleanedPlain
+
+  const cleanedTraditional = traditional ? stripTags(traditional) : ''
+  if (cleanedTraditional.length > 0) return cleanedTraditional
+
+  return cleanedPlain || '(No message body provided by FAA)'
+}
+
+const transformNotam = (raw: RawFaaNotam): TransformedNotam => ({
+  id: raw.notamNumber,
+  number: raw.notamNumber,
+  type: keywordToType(raw.keyword),
+  effectiveStart: parseFaaDate(raw.startDate),
+  effectiveEnd: parseFaaDate(raw.endDate),
+  text: cleanMessage(raw.plainLanguageMessage, raw.traditionalMessage),
+  icaoLocation: raw.icaoId,
+  airportName: raw.airportName
+})
+
+export const transformNotamList = (
+  raw: RawFaaNotamSearchResponse,
+  now: Date = new Date()
+): TransformedNotam[] => {
+  const items = Array.isArray(raw?.notamList) ? raw.notamList : []
+  return items
+    .filter(
+      (n) =>
+        n &&
+        n.notamNumber &&
+        (n.status ?? 'Active').toLowerCase() === 'active' &&
+        n.cancelledOrExpired !== true
+    )
+    .map(transformNotam)
+    .filter((n) => isCurrentlyActive(n, now))
+}
+
+const buildSearchBody = (icao: string): string =>
+  new URLSearchParams({
+    searchType: '0',
+    designatorsForLocation: icao,
+    latDegrees: '0',
+    latMinutes: '0',
+    latSeconds: '0',
+    longDegrees: '0',
+    longMinutes: '0',
+    longSeconds: '0',
+    radius: '10',
+    sortColumns: '5 false',
+    sortDirection: 'true',
+    designatorForAccountable: '',
+    offset: '0',
+    notamsOnly: 'false',
+    radiusSearchOnDesignator: 'false',
+    latitudeDirection: 'N',
+    longitudeDirection: 'W',
+    freeFormText: '',
+    flightPathText: '',
+    flightPathDivertAirfields: '',
+    flightPathBuffer: '4',
+    flightPathIncludeNavaids: 'true',
+    flightPathIncludeArtcc: 'false',
+    flightPathIncludeTfr: 'true',
+    flightPathIncludeRegulatory: 'false',
+    flightPathResultsType: 'All NOTAMs'
+  }).toString()
+
+/**
+ * Fetch live KOSH NOTAMs from the FAA's public NOTAM Search service.
+ * Always hits the network. Never caches. Returns a typed result with a
+ * `fetchedAt` timestamp the UI can display.
+ */
+export async function getKoshNotams(
+  icao: string = DEFAULT_ICAO
+): Promise<NotamFetchResult> {
+  const fetchedAt = new Date().toISOString()
+  const source = `FAA NOTAM Search (${icao})`
   try {
-    const response = await fetch(`${apiUrl}?${params.toString()}`, { headers, signal: AbortSignal.timeout(20000) });
+    const response = await fetch(FAA_NOTAM_SEARCH_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        Accept: 'application/json, text/javascript, */*; q=0.01',
+        // FAA NOTAM Search sits behind Akamai which bot-blocks
+        // non-browser User-Agents. Present a standard browser UA.
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'X-Requested-With': 'XMLHttpRequest',
+        Origin: 'https://notams.aim.faa.gov',
+        Referer: 'https://notams.aim.faa.gov/notamSearch/'
+      },
+      body: buildSearchBody(icao),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
+    })
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP ${response.status} ${response.statusText}`)
     }
-    const data = await response.json();
-    return transformNotamList(data);
+
+    const json = (await response.json()) as RawFaaNotamSearchResponse
+    return {
+      notamList: transformNotamList(json),
+      fetchedAt,
+      source
+    }
   } catch (error) {
-      console.error('Error fetching NOTAMs:', error);
-      return [];
+    const message =
+      error instanceof Error ? error.message : 'Unknown FAA fetch error'
+    console.error('[notams] FAA fetch failed:', message)
+    return {
+      notamList: [],
+      fetchedAt,
+      source,
+      error: message
+    }
   }
 }
 
-export interface TransformedNotam {
-  id: string;
-  number: string;
-  type: string;
-  issued: string;
-  location: string;
-  effectiveStart: string;
-  effectiveEnd: string;
-  text: string;
-  classification: string;
-  accountId: string;
-  lastUpdated: string;
-  icaoLocation: string;
-  coordinates: string;
-  radius: string;
-}
-
-interface RawNotamList {
-  items: {
-    properties: {
-      coreNOTAMData: {
-        notam: {
-          id: string;
-          number: string;
-          type: string;
-          issued: string;
-          location: string;
-          effectiveStart: string;
-          effectiveEnd: string;
-          text: string;
-          classification: string;
-          accountId: string;
-          lastUpdated: string;
-          icaoLocation: string;
-          coordinates: string;
-          radius: string;
-        };
-      };
-    };
-  }[];
-}
-
-export const transformNotamList = (rawNotamList: RawNotamList): TransformedNotam[] => {
-  return rawNotamList.items
-    .map(({ properties }) => ({
-      id: properties.coreNOTAMData.notam.id,
-      number: properties.coreNOTAMData.notam.number,
-      type: properties.coreNOTAMData.notam.type,
-      issued: properties.coreNOTAMData.notam.issued,
-      location: properties.coreNOTAMData.notam.location,
-      effectiveStart: new Date(properties.coreNOTAMData.notam.effectiveStart).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
-      effectiveEnd: new Date(properties.coreNOTAMData.notam.effectiveEnd).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' }),
-      text: properties.coreNOTAMData.notam.text,
-      classification: properties.coreNOTAMData.notam.classification,
-      accountId: properties.coreNOTAMData.notam.accountId,
-      lastUpdated: properties.coreNOTAMData.notam.lastUpdated,
-      icaoLocation: properties.coreNOTAMData.notam.icaoLocation,
-      coordinates: properties.coreNOTAMData.notam.coordinates,
-      radius: properties.coreNOTAMData.notam.radius
-    }))
-    .filter((newNotam: TransformedNotam) => {
-      const now = new Date();
-      const effectiveStart = new Date(newNotam.effectiveStart);
-      const effectiveEnd = new Date(newNotam.effectiveEnd);
-      return effectiveStart <= now && effectiveEnd >= now;
-    });
+/** @deprecated kept temporarily for compatibility with older imports. */
+export const getNotamsFromEAA = async (): Promise<TransformedNotam[]> => {
+  const { notamList } = await getKoshNotams()
+  return notamList
 }

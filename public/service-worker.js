@@ -1,6 +1,6 @@
-const CACHE_NAME = 'eaa-approach-v2';
-const STATIC_CACHE_NAME = 'eaa-approach-static-v2';
-const DYNAMIC_CACHE_NAME = 'eaa-approach-dynamic-v2';
+const CACHE_NAME = 'eaa-approach-v4';
+const STATIC_CACHE_NAME = 'eaa-approach-static-v4';
+const DYNAMIC_CACHE_NAME = 'eaa-approach-dynamic-v4';
 
 // Essential assets that should always be cached
 const STATIC_ASSETS = [
@@ -27,9 +27,8 @@ self.addEventListener('install', (event) => {
         return cache.addAll(STATIC_ASSETS);
       }),
       // Cache stage data and other essential app data
-      caches.open(CACHE_NAME).then((cache) => {
+      caches.open(CACHE_NAME).then(() => {
         console.log('[ServiceWorker] Caching app data');
-        // We can pre-cache important API endpoints or data here
         return Promise.resolve();
       })
     ]).then(() => {
@@ -64,23 +63,24 @@ self.addEventListener('fetch', (event) => {
 
   // Handle different types of requests
   if (request.method === 'GET') {
-    // Handle navigation requests (HTML pages)
+    // Handle navigation requests (HTML pages).
+    // NOTAMs are SSR'd into the document and must always be fresh — never
+    // cache successful navigation responses. We only retain a single
+    // last-known-good HTML in CACHE_NAME for true offline fallback.
     if (request.mode === 'navigate') {
       event.respondWith(
-        fetch(request)
+        fetch(request, { cache: 'no-store' })
           .then((response) => {
-            // Cache successful navigation responses
             if (response.status === 200) {
               const responseClone = response.clone();
               caches.open(CACHE_NAME).then((cache) => {
-                cache.put(request, responseClone);
+                cache.put('/__offline_fallback__', responseClone);
               });
             }
             return response;
           })
           .catch(() => {
-            // Serve cached version if offline
-            return caches.match(request).then((cachedResponse) => {
+            return caches.match('/__offline_fallback__').then((cachedResponse) => {
               return cachedResponse || caches.match('/');
             });
           })
@@ -189,7 +189,6 @@ self.addEventListener('sync', (event) => {
 });
 
 // Handle push notifications (future feature)
-self.addEventListener('push', (event) => {
+self.addEventListener('push', () => {
   console.log('[ServiceWorker] Push received');
-  // Handle push notifications for critical NOTAMs or weather updates
 });
