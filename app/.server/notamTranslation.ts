@@ -73,6 +73,24 @@ const readTimeoutMs = (): number => {
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_TIMEOUT_MS
 }
 
+const fetchWithHeaderTimeout = async (
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
@@ -322,7 +340,7 @@ const performTranslation = async (
 ): Promise<NotamTranslationResult> => {
   const startedAt = Date.now()
   try {
-    const response = await fetch(OPENROUTER_URL, {
+    const response = await fetchWithHeaderTimeout(OPENROUTER_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -342,9 +360,8 @@ const performTranslation = async (
             schema: responseSchema
           }
         }
-      }),
-      signal: AbortSignal.timeout(readTimeoutMs())
-    })
+      })
+    }, readTimeoutMs())
 
     if (!response.ok) {
       serverLogger.warn('notam.translation.openrouter.failed', {

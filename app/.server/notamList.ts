@@ -23,6 +23,24 @@ const FAA_NOTAM_SEARCH_URL = 'https://notams.aim.faa.gov/notamSearch/search'
 const DEFAULT_ICAO = 'KOSH'
 const FETCH_TIMEOUT_MS = 20_000
 
+const fetchWithHeaderTimeout = async (
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal
+    })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export interface TransformedNotam {
   id: string
   number: string
@@ -208,7 +226,7 @@ export async function getKoshNotams(
   const startedAt = Date.now()
   serverLogger.info('notam.fetch.start', { icao })
   try {
-    const response = await fetch(FAA_NOTAM_SEARCH_URL, {
+    const response = await fetchWithHeaderTimeout(FAA_NOTAM_SEARCH_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -221,9 +239,8 @@ export async function getKoshNotams(
         Origin: 'https://notams.aim.faa.gov',
         Referer: 'https://notams.aim.faa.gov/notamSearch/'
       },
-      body: buildSearchBody(icao),
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
-    })
+      body: buildSearchBody(icao)
+    }, FETCH_TIMEOUT_MS)
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} ${response.statusText}`)
