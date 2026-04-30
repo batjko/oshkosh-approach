@@ -42,7 +42,7 @@ export const NotamRow = ({ notam, formatEffectiveEnd }: NotamRowProps) => {
       <td className="text-sm font-mono">
         {formatEffectiveEnd(notam.effectiveEnd)}
       </td>
-      <td className="min-w-[20rem] max-w-[42rem] align-top text-sm">
+      <td className="min-w-[36rem] align-top text-sm">
         <NotamTextBox notam={notam} />
       </td>
     </tr>

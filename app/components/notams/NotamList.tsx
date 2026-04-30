@@ -170,13 +170,13 @@ export const NotamList = ({
 
         <div className="overflow-x-auto">
           {filteredNotams.length > 0 ? (
-            <table className="table table-zebra table-sm table-fixed">
+            <table className="table table-zebra table-sm min-w-[64rem] table-fixed">
               <thead>
                 <tr>
-                  <th className="w-20">Priority</th>
-                  <th className="w-32">Number</th>
-                  <th className="w-28">Type</th>
-                  <th className="w-36">Valid until</th>
+                  <th className="w-12">Priority</th>
+                  <th className="w-20">Number</th>
+                  <th className="w-24">Type</th>
+                  <th className="w-28">Valid until</th>
                   <th>Details</th>
                 </tr>
               </thead>

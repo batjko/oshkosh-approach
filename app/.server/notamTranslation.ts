@@ -7,7 +7,7 @@ import {
 } from './notamTranslationCache'
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-const PROMPT_SCHEMA_VERSION = 'notam-translation-v1'
+const PROMPT_SCHEMA_VERSION = 'notam-translation-v2'
 const DEFAULT_TIMEOUT_MS = 10_000
 const MAX_NOTAM_TEXT_LENGTH = 5_000
 const MAX_FIELD_LENGTH = 600
@@ -50,6 +50,8 @@ export interface NotamTranslationResult {
 interface StructuredNotamTranslation {
   summary: string
   plainLanguageImpact: string
+  impactListType: 'ordered' | 'unordered'
+  impactItems: string[]
   affectedOperation: string
   pilotConsiderations: string[]
   uncertainties: string[]
@@ -74,12 +76,27 @@ const readTimeoutMs = (): number => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
+const stripForbiddenPrefix = (value: string): string =>
+  value
+    .replace(
+      /^(?:ai\s+(?:translation|explanation)|in\s+plain\s+english|plain\s+english)\s*:\s*/i,
+      ''
+    )
+    .trim()
+
 const textFromRecord = (
   record: Record<string, unknown>,
   key: keyof StructuredNotamTranslation
 ): string => {
   const value = record[key]
-  return typeof value === 'string' ? value.trim() : ''
+  return typeof value === 'string' ? stripForbiddenPrefix(value.trim()) : ''
+}
+
+const listTypeFromRecord = (
+  record: Record<string, unknown>
+): StructuredNotamTranslation['impactListType'] => {
+  const value = record.impactListType
+  return value === 'ordered' || value === 'unordered' ? value : 'unordered'
 }
 
 const stringArrayFromRecord = (
@@ -90,7 +107,7 @@ const stringArrayFromRecord = (
   if (!Array.isArray(value)) return []
   return value
     .filter((item): item is string => typeof item === 'string')
-    .map((item) => item.trim())
+    .map((item) => stripForbiddenPrefix(item.trim()))
     .filter(Boolean)
     .slice(0, MAX_ARRAY_ITEMS)
 }
@@ -110,18 +127,29 @@ const renderList = (label: string, items: string[]): string => {
     .join('')}</ul></section>`
 }
 
+const renderImpactList = (
+  type: StructuredNotamTranslation['impactListType'],
+  items: string[]
+): string => {
+  if (!items.length) return ''
+  const tag = type === 'ordered' ? 'ol' : 'ul'
+  return `<${tag}>${items
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join('')}</${tag}>`
+}
+
 const renderTranslationHtml = (
   translation: StructuredNotamTranslation
 ): string =>
   [
     '<article>',
-    `<p><strong>AI explanation:</strong> ${escapeHtml(translation.summary)}</p>`,
+    `<p><strong>${escapeHtml(translation.summary)}</strong></p>`,
     `<p>${escapeHtml(translation.plainLanguageImpact)}</p>`,
+    renderImpactList(translation.impactListType, translation.impactItems),
     `<p><strong>Affects:</strong> ${escapeHtml(translation.affectedOperation)}</p>`,
     renderList('Pilot considerations', translation.pilotConsiderations),
     renderList('Uncertainties to verify', translation.uncertainties),
     renderList('Source NOTAM terms', translation.sourceTerms),
-    '<p><em>Verify against the raw FAA NOTAM before flight.</em></p>',
     '</article>'
   ].join('')
 
@@ -133,11 +161,16 @@ const hasUnsupportedAuthorityClaim = (value: string): boolean =>
   /\b(guaranteed|safe to ignore|ignore the raw|authoritative|official interpretation)\b/i
     .test(value)
 
+const hasForbiddenCommentary = (value: string): boolean =>
+  /\b(ai\s+(?:translation|explanation)|in\s+plain\s+english|as\s+an\s+ai|for\s+informational\s+purposes|not\s+a\s+substitute|consult\s+(?:the\s+)?official|verify\s+against\s+(?:the\s+)?(?:raw|official|faa))\b/i
+    .test(value)
+
 const isReasonableText = (value: string): boolean =>
   value.length > 0 &&
   value.length <= MAX_FIELD_LENGTH &&
   !hasUnsafeContent(value) &&
-  !hasUnsupportedAuthorityClaim(value)
+  !hasUnsupportedAuthorityClaim(value) &&
+  !hasForbiddenCommentary(value)
 
 const validateStructuredTranslation = (
   value: StructuredNotamTranslation
@@ -150,6 +183,7 @@ const validateStructuredTranslation = (
   if (!requiredFields.every(isReasonableText)) return 'invalid_required_fields'
 
   const arrayFields = [
+    value.impactItems,
     value.pilotConsiderations,
     value.uncertainties,
     value.sourceTerms
@@ -171,6 +205,8 @@ const parseStructuredTranslation = (
   return {
     summary: textFromRecord(parsed, 'summary'),
     plainLanguageImpact: textFromRecord(parsed, 'plainLanguageImpact'),
+    impactListType: listTypeFromRecord(parsed),
+    impactItems: stringArrayFromRecord(parsed, 'impactItems'),
     affectedOperation: textFromRecord(parsed, 'affectedOperation'),
     pilotConsiderations: stringArrayFromRecord(parsed, 'pilotConsiderations'),
     uncertainties: stringArrayFromRecord(parsed, 'uncertainties'),
@@ -187,7 +223,18 @@ const responseSchema = {
     },
     plainLanguageImpact: {
       type: 'string',
-      description: 'What this changes for a VFR pilot in plain English.'
+      description: 'One short paragraph explaining the overall impact. Do not inline numbered or bulleted steps here; put them in impactItems.'
+    },
+    impactListType: {
+      type: 'string',
+      enum: ['ordered', 'unordered'],
+      description: 'Use ordered for numbered/sequential steps; use unordered for non-sequential bullet-style items.'
+    },
+    impactItems: {
+      type: 'array',
+      description: 'List items from the NOTAM impact, if any. Preserve each ordered or bulleted item separately without leading numbers or bullet characters.',
+      items: { type: 'string' },
+      maxItems: MAX_ARRAY_ITEMS
     },
     affectedOperation: {
       type: 'string',
@@ -215,6 +262,8 @@ const responseSchema = {
   required: [
     'summary',
     'plainLanguageImpact',
+    'impactListType',
+    'impactItems',
     'affectedOperation',
     'pilotConsiderations',
     'uncertainties',
@@ -227,7 +276,7 @@ const buildMessages = (notam: NotamTranslationRequest) => [
   {
     role: 'system',
     content:
-      'You explain United States FAA NOTAMs for general aviation pilots. NOTAM means Notice to Air Missions. Explain abbreviations and operational impact, but do not invent facts, do not issue clearances, and do not replace the FAA source. If the NOTAM is ambiguous, say what must be verified in the official NOTAM source.'
+      'You explain United States FAA NOTAMs for general aviation pilots. NOTAM means Notice to Air Missions. Explain abbreviations and operational impact, but do not invent facts or issue clearances. Return only the requested structured field values. Do not add commentary, disclaimers, preambles, labels, or prefixes such as "AI translation", "AI explanation", or "In plain English". If the raw NOTAM contains or implies ordered steps, numbered clauses, or bullet-like items, put those items in impactItems as separate list items instead of writing them inline in a paragraph. Set impactListType to ordered for numbered or sequential steps, and unordered for bullet-like non-sequential items.'
   },
   {
     role: 'user',

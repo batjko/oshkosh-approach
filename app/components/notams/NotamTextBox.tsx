@@ -4,7 +4,8 @@ import {
   MdCode,
   MdErrorOutline,
   MdHourglassEmpty,
-  MdRefresh
+  MdRefresh,
+  MdTextSnippet
 } from 'react-icons/md'
 
 import type { Notam } from './types'
@@ -117,6 +118,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
         .then((result) => {
           if (result.status === 'ready' && result.translation) {
             setTranslation(result.translation)
+            setShowTranslation(true)
             setStatus('ready')
             setIsFresh(true)
             window.setTimeout(() => setIsFresh(false), 900)
@@ -218,8 +220,14 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
   return (
     <div
       ref={containerRef}
-      className="relative max-w-[42rem] rounded-lg border border-base-300 bg-base-100"
+      className="relative w-full rounded-lg border border-base-300 bg-base-100"
     >
+      {showTranslation && translation && (
+        <MdAutoAwesome
+          aria-hidden="true"
+          className="absolute left-2 top-2 z-10 h-4 w-4 text-warning"
+        />
+      )}
       <button
         type="button"
         className="btn btn-circle btn-ghost btn-xs absolute right-1 top-1 z-10 bg-base-100/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -233,20 +241,25 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
           : status === 'ready'
             ? showTranslation
               ? <MdCode className="h-3.5 w-3.5" />
-              : <MdAutoAwesome className="h-3.5 w-3.5 text-warning" />
+              : <MdTextSnippet className="h-3.5 w-3.5" />
             : showErrorState
               ? <MdRefresh className="h-3.5 w-3.5" />
-              : <MdAutoAwesome className="h-3.5 w-3.5" />}
+              : <MdTextSnippet className="h-3.5 w-3.5" />}
       </button>
 
-      <div className="max-h-64 overflow-y-auto p-3 pr-8">
+      <div
+        className={[
+          'max-h-[22rem] overflow-y-auto overscroll-contain p-3 pr-8 sm:max-h-[26rem] lg:max-h-[30rem]',
+          showTranslation && translation ? 'pl-8' : ''
+        ].join(' ')}
+      >
         {showTranslation && translation
           ? (
             <div
               className={[
                 'space-y-2 text-sm leading-relaxed text-base-content transition-opacity duration-300 motion-reduce:transition-none',
                 isFresh ? 'opacity-80' : 'opacity-100',
-                '[&_h4]:mt-2 [&_h4]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2'
+                '[&_h4]:mt-2 [&_h4]:font-semibold [&_ol>li]:ml-4 [&_ol>li]:list-decimal [&_p]:mb-2 [&_ul>li]:ml-4 [&_ul>li]:list-disc'
               ].join(' ')}
               dangerouslySetInnerHTML={{ __html: translation.html }}
             />
@@ -267,8 +280,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
               isFresh ? 'opacity-100' : 'opacity-80'
             ].join(' ')}
           >
-            <MdAutoAwesome className="h-3 w-3" />
-            AI explanation ready
+            Explanation ready
           </div>
         )}
 
