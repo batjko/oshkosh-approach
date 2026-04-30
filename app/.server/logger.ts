@@ -32,6 +32,17 @@ const ENVIRONMENT =
   process.env.NODE_ENV === 'production' ? 'production' : 'development'
 
 const token = process.env.POSTHOG_PROJECT_KEY ?? DEFAULT_POSTHOG_TOKEN
+const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const
+type LogLevel = typeof LOG_LEVELS[number]
+
+const isLogLevel = (value: string | undefined): value is LogLevel =>
+  LOG_LEVELS.includes(value as LogLevel)
+
+const MIN_LOG_LEVEL: LogLevel = isLogLevel(process.env.LOG_LEVEL)
+  ? process.env.LOG_LEVEL
+  : ENVIRONMENT === 'production'
+    ? 'info'
+    : 'debug'
 
 let otelLogger: OtelLogger | null = null
 
@@ -68,11 +79,20 @@ const SEVERITY: Record<string, SeverityNumber> = {
   error: SeverityNumber.ERROR
 }
 
+const LEVEL_WEIGHT: Record<LogLevel, number> = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40
+}
+
 const emit = (
-  level: 'debug' | 'info' | 'warn' | 'error',
+  level: LogLevel,
   body: string,
   attributes?: LogAttributes
 ) => {
+  if (LEVEL_WEIGHT[level] < LEVEL_WEIGHT[MIN_LOG_LEVEL]) return
+
   if (otelLogger) {
     otelLogger.emit({
       severityNumber: SEVERITY[level],
