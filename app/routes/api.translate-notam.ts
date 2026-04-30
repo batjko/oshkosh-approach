@@ -6,6 +6,7 @@ import {
   type NotamTranslationRequest
 } from '../.server/notamTranslation'
 import { verifyNotamTranslationRequest } from '../.server/notamTranslationSignature'
+import { serverLogger } from '../.server/logger'
 
 const NO_STORE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -43,14 +44,31 @@ const isTranslationRequest = (
   )
 }
 
+const firstForwardedValue = (value: string | null): string | null =>
+  value?.split(',')[0]?.trim() || null
+
+const expectedOrigins = (request: Request): string[] => {
+  const url = new URL(request.url)
+  const forwardedProto = firstForwardedValue(request.headers.get('X-Forwarded-Proto'))
+  const forwardedHost = firstForwardedValue(request.headers.get('X-Forwarded-Host')) ??
+    request.headers.get('Host')
+  const origins = new Set([url.origin])
+
+  if (forwardedProto && forwardedHost) {
+    origins.add(`${forwardedProto}://${forwardedHost}`)
+  }
+
+  return [...origins]
+}
+
 const sameOrigin = (request: Request): boolean => {
-  const expectedOrigin = new URL(request.url).origin
+  const allowedOrigins = expectedOrigins(request)
   const origin = request.headers.get('Origin')
-  if (origin) return origin === expectedOrigin
+  if (origin) return allowedOrigins.includes(origin)
 
   const referer = request.headers.get('Referer')
   try {
-    return Boolean(referer && new URL(referer).origin === expectedOrigin)
+    return Boolean(referer && allowedOrigins.includes(new URL(referer).origin))
   } catch {
     return false
   }
@@ -94,6 +112,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (!sameOrigin(request)) {
+    serverLogger.warn('notam.translation.rejected', {
+      reason: 'same_origin_required',
+      origin: request.headers.get('Origin') ?? '',
+      refererOrigin: (() => {
+        try {
+          const referer = request.headers.get('Referer')
+          return referer ? new URL(referer).origin : ''
+        } catch {
+          return 'invalid'
+        }
+      })(),
+      expectedOrigins: expectedOrigins(request).join(',')
+    })
     return json(
       { status: 'invalid', error: 'same_origin_required' },
       { status: 403, headers: NO_STORE_HEADERS }
@@ -124,6 +155,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     if (!verifyNotamTranslationRequest(body, body.translationToken)) {
+      serverLogger.warn('notam.translation.rejected', {
+        reason: 'invalid_translation_token',
+        notamNumber: body.number,
+        hasToken: Boolean(body.translationToken)
+      })
       return json(
         { status: 'invalid', error: 'invalid_translation_token' },
         { status: 403, headers: NO_STORE_HEADERS }
