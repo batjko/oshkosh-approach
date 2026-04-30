@@ -15,6 +15,7 @@ const MAX_ARRAY_ITEMS = 5
 
 export type NotamTranslationStatus =
   | 'ready'
+  | 'pending'
   | 'timeout'
   | 'unavailable'
   | 'invalid'
@@ -45,6 +46,7 @@ export interface NotamTranslationResult {
   cached?: boolean
   translation?: NotamTranslationValue
   error?: string
+  retryAfterMs?: number
 }
 
 interface StructuredNotamTranslation {
@@ -67,6 +69,13 @@ interface OpenRouterResponse {
 }
 
 const inFlight = new Map<string, Promise<NotamTranslationResult>>()
+const completedJobs = new Map<
+  string,
+  { result: NotamTranslationResult; expiresAt: number }
+>()
+const PENDING_POLL_MS = 6_000
+const FAILED_JOB_TTL_MS = 5_000
+const MAX_COMPLETED_JOBS = 200
 
 const readTimeoutMs = (): number => {
   const raw = Number(process.env.OPENROUTER_NOTAM_TIMEOUT_MS)
@@ -321,6 +330,43 @@ const validateRequest = (
   return null
 }
 
+const getTranslationConfig = ():
+  | { apiKey: string; modelId: string }
+  | null => {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  const modelId = process.env.OPENROUTER_NOTAM_MODEL_ID
+  if (!apiKey || !modelId) return null
+  return { apiKey, modelId }
+}
+
+const buildCacheIdentity = (
+  notam: NotamTranslationRequest,
+  modelId: string
+): NotamTranslationCacheIdentity => ({
+  id: notam.id,
+  number: notam.number,
+  type: notam.type,
+  icaoLocation: notam.icaoLocation,
+  effectiveStart: notam.effectiveStart,
+  effectiveEnd: notam.effectiveEnd,
+  text: notam.text,
+  modelId,
+  promptSchemaVersion: PROMPT_SCHEMA_VERSION
+})
+
+const pruneCompletedJobs = (): void => {
+  const now = Date.now()
+  for (const [key, job] of completedJobs) {
+    if (job.expiresAt <= now) completedJobs.delete(key)
+  }
+
+  while (completedJobs.size > MAX_COMPLETED_JOBS) {
+    const oldestKey = completedJobs.keys().next().value
+    if (!oldestKey) return
+    completedJobs.delete(oldestKey)
+  }
+}
+
 const classifyError = (error: unknown): NotamTranslationStatus => {
   if (
     error instanceof Error &&
@@ -435,23 +481,13 @@ export const translateNotam = async (
   const requestError = validateRequest(notam)
   if (requestError) return { status: 'invalid', error: requestError }
 
-  const apiKey = process.env.OPENROUTER_API_KEY
-  const modelId = process.env.OPENROUTER_NOTAM_MODEL_ID
-  if (!apiKey || !modelId) {
+  const config = getTranslationConfig()
+  if (!config) {
     return { status: 'unavailable', error: 'openrouter_not_configured' }
   }
+  const { apiKey, modelId } = config
 
-  const identity: NotamTranslationCacheIdentity = {
-    id: notam.id,
-    number: notam.number,
-    type: notam.type,
-    icaoLocation: notam.icaoLocation,
-    effectiveStart: notam.effectiveStart,
-    effectiveEnd: notam.effectiveEnd,
-    text: notam.text,
-    modelId,
-    promptSchemaVersion: PROMPT_SCHEMA_VERSION
-  }
+  const identity = buildCacheIdentity(notam, modelId)
   const { key, sourceHash } = buildNotamTranslationCacheKey(identity)
   const cached = await readNotamTranslationCache<NotamTranslationValue>(
     key,
@@ -487,23 +523,74 @@ export const translateNotam = async (
   return promise
 }
 
+export const requestNotamTranslation = async (
+  notam: NotamTranslationRequest
+): Promise<NotamTranslationResult> => {
+  const requestError = validateRequest(notam)
+  if (requestError) return { status: 'invalid', error: requestError }
+
+  const config = getTranslationConfig()
+  if (!config) {
+    return { status: 'unavailable', error: 'openrouter_not_configured' }
+  }
+  const { apiKey, modelId } = config
+  const identity = buildCacheIdentity(notam, modelId)
+  const { key, sourceHash } = buildNotamTranslationCacheKey(identity)
+  pruneCompletedJobs()
+  const cached = await readNotamTranslationCache<NotamTranslationValue>(
+    key,
+    sourceHash
+  )
+
+  if (cached) {
+    return {
+      status: 'ready',
+      cacheKey: key,
+      cached: true,
+      translation: cached
+    }
+  }
+
+  const completed = completedJobs.get(key)
+  if (completed) {
+    if (completed.expiresAt > Date.now()) return completed.result
+    completedJobs.delete(key)
+  }
+
+  const existing = inFlight.get(key)
+  if (existing) {
+    return { status: 'pending', cacheKey: key, retryAfterMs: PENDING_POLL_MS }
+  }
+
+  const promise = performTranslation(notam, key, sourceHash, modelId, apiKey)
+    .then((result) => {
+      if (result.status !== 'ready') {
+        completedJobs.set(key, {
+          result: {
+            ...result,
+            retryAfterMs: result.retryAfterMs ?? FAILED_JOB_TTL_MS
+          },
+          expiresAt: Date.now() + FAILED_JOB_TTL_MS
+        })
+        pruneCompletedJobs()
+      }
+      return result
+    })
+    .finally(() => {
+      inFlight.delete(key)
+    })
+
+  inFlight.set(key, promise)
+  return { status: 'pending', cacheKey: key, retryAfterMs: PENDING_POLL_MS }
+}
+
 export const getCachedNotamTranslation = async (
   notam: NotamTranslationRequest
 ): Promise<NotamTranslationValue | null> => {
   const modelId = process.env.OPENROUTER_NOTAM_MODEL_ID
   if (!modelId) return null
 
-  const identity: NotamTranslationCacheIdentity = {
-    id: notam.id,
-    number: notam.number,
-    type: notam.type,
-    icaoLocation: notam.icaoLocation,
-    effectiveStart: notam.effectiveStart,
-    effectiveEnd: notam.effectiveEnd,
-    text: notam.text,
-    modelId,
-    promptSchemaVersion: PROMPT_SCHEMA_VERSION
-  }
+  const identity = buildCacheIdentity(notam, modelId)
   const { key, sourceHash } = buildNotamTranslationCacheKey(identity)
   return readNotamTranslationCache<NotamTranslationValue>(key, sourceHash)
 }

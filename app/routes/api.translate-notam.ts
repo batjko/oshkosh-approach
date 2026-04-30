@@ -2,7 +2,7 @@ import type { ActionFunctionArgs } from '@remix-run/node'
 import { json } from '@remix-run/node'
 
 import {
-  translateNotam,
+  requestNotamTranslation,
   type NotamTranslationRequest
 } from '../.server/notamTranslation'
 import { verifyNotamTranslationRequest } from '../.server/notamTranslationSignature'
@@ -166,7 +166,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       )
     }
 
-    const result = await translateNotam(body)
+    const result = await requestNotamTranslation(body)
     const httpStatus = result.status === 'invalid' ? 400 : 200
     return json(result, { status: httpStatus, headers: NO_STORE_HEADERS })
   } catch {

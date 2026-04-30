@@ -14,6 +14,7 @@ type TranslationStatus =
   | 'idle'
   | 'loading'
   | 'ready'
+  | 'pending'
   | 'timeout'
   | 'unavailable'
   | 'invalid'
@@ -41,6 +42,7 @@ interface NotamTextBoxProps {
 
 const MAX_CONCURRENT_TRANSLATIONS = 2
 const RETRY_COOLDOWN_MS = 5_000
+const MAX_CLIENT_POLL_MS = 180_000
 
 let activeTranslations = 0
 const translationQueue: Array<() => void> = []
@@ -66,23 +68,40 @@ const enqueueTranslation = async <T,>(task: () => Promise<T>): Promise<T> =>
     translationQueue.push(run)
   })
 
-const fetchTranslation = async (notam: Notam): Promise<TranslationResponse> => {
-  const response = await fetch('/api/translate-notam', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      id: notam.id,
-      number: notam.number,
-      type: notam.type,
-      effectiveStart: notam.effectiveStart,
-      effectiveEnd: notam.effectiveEnd,
-      text: notam.text,
-      icaoLocation: notam.icaoLocation,
-      translationToken: notam.translationToken
-    })
-  })
+const wait = async (ms: number): Promise<void> =>
+  new Promise((resolve) => window.setTimeout(resolve, ms))
 
-  return (await response.json()) as TranslationResponse
+const fetchTranslation = async (
+  notam: Notam,
+  signal: AbortSignal
+): Promise<TranslationResponse> => {
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < MAX_CLIENT_POLL_MS) {
+    if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
+
+    const response = await fetch('/api/translate-notam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: notam.id,
+        number: notam.number,
+        type: notam.type,
+        effectiveStart: notam.effectiveStart,
+        effectiveEnd: notam.effectiveEnd,
+        text: notam.text,
+        icaoLocation: notam.icaoLocation,
+        translationToken: notam.translationToken
+      }),
+      signal
+    })
+
+    const result = (await response.json()) as TranslationResponse
+    if (result.status !== 'pending') return result
+    await wait(result.retryAfterMs ?? 6_000)
+  }
+
+  return { status: 'timeout', error: 'client_poll_timeout' }
 }
 
 const retryLabelFor = (status: TranslationStatus): string => {
@@ -95,6 +114,8 @@ const retryLabelFor = (status: TranslationStatus): string => {
 
 export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const mountedRef = useRef(true)
   const [status, setStatus] = useState<TranslationStatus>(
     notam.cachedTranslation ? 'ready' : 'idle'
   )
@@ -116,10 +137,14 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
         return
       }
 
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
       setRequested(true)
       setStatus('loading')
-      enqueueTranslation(() => fetchTranslation(notam))
+      enqueueTranslation(() => fetchTranslation(notam, controller.signal))
         .then((result) => {
+          if (!mountedRef.current || controller.signal.aborted) return
           if (result.status === 'ready' && result.translation) {
             setTranslation(result.translation)
             setShowTranslation(true)
@@ -141,7 +166,14 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
             )
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          if (
+            !mountedRef.current ||
+            controller.signal.aborted ||
+            (error instanceof Error && error.name === 'AbortError')
+          ) {
+            return
+          }
           setShowTranslation(false)
           setStatus('error')
           setRetryAfter(Date.now() + RETRY_COOLDOWN_MS)
@@ -151,6 +183,15 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
   )
 
   useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  useEffect(() => {
+    abortRef.current?.abort()
     setStatus(notam.cachedTranslation ? 'ready' : 'idle')
     setTranslation(notam.cachedTranslation ?? null)
     setShowTranslation(Boolean(notam.cachedTranslation))
