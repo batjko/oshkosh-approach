@@ -82,9 +82,10 @@ app/
   utils/
     notamFilters.ts         # Priority categorisation (critical/high/medium/low)
     geofencing.ts           # Phase-named zones from canonical waypoints
+    analytics.ts            # Typed PostHog wrapper + event catalog
   store/useAppStore.ts      # Zustand store (persist), single source of UI state
   routes/_index.tsx         # Single route. Loader fetches NOTAMs.
-  root.tsx, entry.{client,server}.tsx, tailwind.css
+  root.tsx, provider.tsx, entry.{client,server}.tsx, tailwind.css
 public/
   service-worker.js         # PWA SW (cache version: v4)
   manifest.json
@@ -240,7 +241,7 @@ clientLogger.info('sw.registered', { scope: reg.scope })
 clientLogger.error('client.errorBoundary', { message, stack })
 ```
 
-- `posthog.init({ logs: { serviceName: 'oshkosh-approach-web', environment } })` is in `entry.client.tsx`.
+- PostHog is initialised in `app/utils/analytics.ts` (called from `app/provider.tsx` after hydration). Defaults: `defaults: '2026-01-30'`, `person_profiles: 'identified_only'`, `capture_pageview: 'history_change'`, `capture_pageleave: 'if_capture_pageview'`.
 - We intentionally **do not** enable `captureConsoleLogs` — PostHog's docs flag it as a privacy/blast-radius risk; everything from third-party libs would leak.
 - Logger calls don't write to the browser console. If you want both, log explicitly to console as well.
 
@@ -324,7 +325,8 @@ changes belong in PostHog *events* (analytics), not logs.
 - **Geolocation is opt-in**: `useGeolocation` only requests permission when `gpsEnabled` is `true` in the store. Don't call `navigator.geolocation` from anywhere else.
 - **Service worker can serve stale JS in dev** if it was registered before a code change. If something looks wrong in the browser but not in `curl` of the SSR HTML, hard-reload (Cmd-Shift-R) or unregister the SW once.
 - **Heroku auto-deploys** on `git push origin master`. There is no preview environment. Validate locally first.
-- **PostHog is initialised in `entry.client.tsx`** with a hardcoded project key; it's intentionally client-only.
+- **PostHog is initialised in `app/utils/analytics.ts` via `app/provider.tsx`** — `entry.client.tsx` is a vanilla Remix hydration entry. Project key/host default to hardcoded EU values but are overridable via `VITE_PUBLIC_POSTHOG_TOKEN` / `VITE_PUBLIC_POSTHOG_HOST`. Init is post-hydration to avoid SSR mismatches; `<PostHogProvider>` wraps from first paint so the subtree is not remounted.
+- **App analytics events live in `app/utils/analytics.ts` (`AppEventMap` / `trackAppEvent`)**. Capture is mostly centralised inside `useAppStore` actions (phase, mode, sheet, GPS, theme, profile, runway, onboarding, section). NOTAM totals are summarised by priority via `countNotamsByPriority` — never send raw NOTAM text. Do not capture geolocation, aircraft identity, or call sign.
 - **The 2026 FAA Notice publishes mid-May 2026**. Until then, `app/content/oshkosh/notice.ts` runs in `'baseline'` mode using the 2025 Notice. Flip to `'released'` only after a full content review against the 2026 Notice.
 
 ---

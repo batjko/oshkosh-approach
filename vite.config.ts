@@ -15,6 +15,9 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  ssr: {
+    noExternal: ["posthog-js", "@posthog/react"],
+  },
   server: {
     watch: {
       usePolling: true,

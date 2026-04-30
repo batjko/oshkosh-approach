@@ -166,6 +166,25 @@ export const getImportantNotams = <T extends NotamLike>(notams: T[]) =>
         priorityOrder[a.priority.level] - priorityOrder[b.priority.level]
     )
 
+/**
+ * Count NOTAMs by priority level. Used for analytics summaries that
+ * want a categorical breakdown without sending raw text to PostHog.
+ */
+export const countNotamsByPriority = <T extends NotamLike>(
+  notams: T[]
+): Record<NotamPriority['level'], number> => {
+  const counts: Record<NotamPriority['level'], number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0
+  }
+  for (const notam of notams) {
+    counts[categorizeNotamPriority(notam.text).level] += 1
+  }
+  return counts
+}
+
 export const sortNotamsByPriority = <T extends NotamLike>(notams: T[]) =>
   notams
     .map((notam) => ({

@@ -71,7 +71,7 @@ export const useGeolocation = () => {
           if (!suppressedPhases.has(currentPhase)) {
             const suggested = getLocationSuggestedPhase(here, currentPhase)
             if (suggested) {
-              setCurrentPhase(suggested)
+              setCurrentPhase(suggested, 'gps_suggestion')
               showNotification({
                 type: 'success',
                 title: 'Phase advanced',

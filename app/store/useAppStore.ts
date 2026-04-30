@@ -8,6 +8,7 @@ import {
   phaseById
 } from '~/content/oshkosh'
 import type { PhaseId } from '~/content/oshkosh'
+import { trackAppEvent } from '~/utils/analytics'
 
 export type AppMode = 'pre-flight' | 'in-flight'
 export type Theme = 'chart' | 'cockpit'
@@ -25,6 +26,18 @@ export type SheetId =
   | 'signs'
   | 'alternates'
   | 'divert'
+
+/**
+ * Where a phase change originated from. Helps us tell pilot-driven
+ * navigation (chip / hero buttons) apart from automatic suggestions
+ * (geolocation, onboarding completion).
+ */
+export type PhaseChangeSource =
+  | 'spine'
+  | 'hero_next'
+  | 'hero_prev'
+  | 'gps_suggestion'
+  | 'onboarding'
 
 export interface CurrentLocation {
   lat: number
@@ -96,7 +109,7 @@ interface AppState {
   openSheet: SheetId | null
 
   // Actions
-  setCurrentPhase: (id: PhaseId) => void
+  setCurrentPhase: (id: PhaseId, source?: PhaseChangeSource) => void
   nextPhase: () => void
   prevPhase: () => void
   setMode: (mode: AppMode) => void
@@ -133,35 +146,53 @@ export const useAppStore = create<AppState>()(
       activeSection: defaultSectionForPhase(firstPhase.id),
       openSheet: null,
 
-      setCurrentPhase: (id) => {
-        if (phaseById(id)) {
-          set({ currentPhase: id, activeSection: defaultSectionForPhase(id) })
-        }
+      setCurrentPhase: (id, source = 'spine') => {
+        if (!phaseById(id)) return
+        const prev = get().currentPhase
+        if (prev === id) return
+        set({ currentPhase: id, activeSection: defaultSectionForPhase(id) })
+        trackAppEvent('phase changed', { from: prev, to: id, source })
       },
 
-      nextPhase: () =>
-        set((state) => {
-          const current = phaseById(state.currentPhase) ?? firstPhase
-          const next = phaseAtOrder(current.order + 1)
-          const nextId = (next ?? lastPhase).id
-          return {
-            currentPhase: nextId,
-            activeSection: defaultSectionForPhase(nextId)
-          }
-        }),
+      nextPhase: () => {
+        const state = get()
+        const current = phaseById(state.currentPhase) ?? firstPhase
+        const next = phaseAtOrder(current.order + 1)
+        const nextId = (next ?? lastPhase).id
+        if (nextId === state.currentPhase) return
+        set({
+          currentPhase: nextId,
+          activeSection: defaultSectionForPhase(nextId)
+        })
+        trackAppEvent('phase changed', {
+          from: state.currentPhase,
+          to: nextId,
+          source: 'hero_next'
+        })
+      },
 
-      prevPhase: () =>
-        set((state) => {
-          const current = phaseById(state.currentPhase) ?? firstPhase
-          const prev = phaseAtOrder(current.order - 1)
-          const prevId = (prev ?? firstPhase).id
-          return {
-            currentPhase: prevId,
-            activeSection: defaultSectionForPhase(prevId)
-          }
-        }),
+      prevPhase: () => {
+        const state = get()
+        const current = phaseById(state.currentPhase) ?? firstPhase
+        const prev = phaseAtOrder(current.order - 1)
+        const prevId = (prev ?? firstPhase).id
+        if (prevId === state.currentPhase) return
+        set({
+          currentPhase: prevId,
+          activeSection: defaultSectionForPhase(prevId)
+        })
+        trackAppEvent('phase changed', {
+          from: state.currentPhase,
+          to: prevId,
+          source: 'hero_prev'
+        })
+      },
 
-      setMode: (mode) => set({ mode }),
+      setMode: (mode) => {
+        if (get().mode === mode) return
+        set({ mode })
+        trackAppEvent('mode changed', { mode, reason: 'allowed' })
+      },
 
       setTheme: (theme) => {
         set({ theme })
@@ -174,27 +205,53 @@ export const useAppStore = create<AppState>()(
         const { theme } = get()
         const next = theme === 'chart' ? 'cockpit' : 'chart'
         get().setTheme(next)
+        trackAppEvent('theme toggled', { theme: next })
       },
 
-      setEnableMap: (enable) => set({ enableMap: enable }),
+      setEnableMap: (enable) => {
+        if (get().enableMap === enable) return
+        set({ enableMap: enable })
+        trackAppEvent('map toggled', { enabled: enable })
+      },
 
       setNoticeYearAcknowledged: (year) => set({ noticeYearAcknowledged: year }),
 
-      setAircraftProfileId: (id) => set({ aircraftProfileId: id }),
+      setAircraftProfileId: (id) => {
+        if (get().aircraftProfileId === id) return
+        set({ aircraftProfileId: id })
+        trackAppEvent('profile selected', { profile_id: id })
+      },
 
       setAircraftIdentity: (identity) => set({ aircraftIdentity: identity }),
 
-      setAssignedRunwayId: (id) => set({ assignedRunwayId: id }),
+      setAssignedRunwayId: (id) => {
+        if (get().assignedRunwayId === id) return
+        set({ assignedRunwayId: id })
+        trackAppEvent('runway assigned', { runway_id: id })
+      },
 
       setCurrentLocation: (location) => set({ currentLocation: location }),
 
-      setGpsEnabled: (enabled) =>
+      setGpsEnabled: (enabled) => {
+        const prev = get().gpsEnabled
         set((state) => ({
           gpsEnabled: enabled,
           currentLocation: enabled ? state.currentLocation : null
-        })),
+        }))
+        if (prev !== enabled) {
+          trackAppEvent('gps toggled', { enabled })
+        }
+      },
 
-      completeOnboarding: () => set({ onboardingComplete: true }),
+      completeOnboarding: () => {
+        if (get().onboardingComplete) return
+        set({ onboardingComplete: true })
+        const state = get()
+        trackAppEvent('onboarding completed', {
+          notice_acknowledged: state.noticeYearAcknowledged !== null,
+          profile_id: state.aircraftProfileId
+        })
+      },
 
       resetOnboarding: () =>
         set({
@@ -202,9 +259,21 @@ export const useAppStore = create<AppState>()(
           noticeYearAcknowledged: null
         }),
 
-      setActiveSection: (section) => set({ activeSection: section }),
+      setActiveSection: (section) => {
+        if (get().activeSection === section) return
+        set({ activeSection: section })
+        const state = get()
+        trackAppEvent('section viewed', {
+          phase: state.currentPhase,
+          section,
+          mode: state.mode
+        })
+      },
 
-      openSheetAction: (sheet) => set({ openSheet: sheet }),
+      openSheetAction: (sheet) => {
+        set({ openSheet: sheet })
+        trackAppEvent('sheet opened', { sheet })
+      },
 
       closeSheet: () => set({ openSheet: null })
     }),

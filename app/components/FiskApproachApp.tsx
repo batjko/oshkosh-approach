@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { AppShell } from './shell/AppShell'
 import { CriticalNotamBanner } from './shell/CriticalNotamBanner'
 import { PhaseSections } from './section/PhaseSections'
@@ -10,7 +10,11 @@ import { SignsSheet } from './sheets/SignsSheet'
 import { AlternatesSheet } from './sheets/AlternatesSheet'
 import { DivertSheet } from './sheets/DivertSheet'
 import { useAppStore } from '~/store/useAppStore'
-import { getCriticalNotams } from '~/utils/notamFilters'
+import {
+  countNotamsByPriority,
+  getCriticalNotams
+} from '~/utils/notamFilters'
+import { trackAppEvent } from '~/utils/analytics'
 
 interface NotamItem {
   id: string
@@ -56,6 +60,22 @@ export const FiskApproachApp = ({
       })),
     [list]
   )
+
+  useEffect(() => {
+    const counts = countNotamsByPriority(list)
+    trackAppEvent('notams loaded', {
+      status: fetchError ? 'error' : 'success',
+      total: list.length,
+      critical: counts.critical,
+      high: counts.high,
+      medium: counts.medium,
+      low: counts.low
+    })
+    // Fire once per loader response (each fetch produces a new
+    // `fetchedAt`); list identity changes too but is captured via the
+    // counts above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchedAt])
 
   return (
     <>
