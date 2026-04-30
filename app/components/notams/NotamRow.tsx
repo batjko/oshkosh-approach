@@ -4,6 +4,7 @@ import {
   categorizeNotamPriority,
   type NotamPriority
 } from '~/utils/notamFilters'
+import { NotamTypeBadge } from './NotamTypeBadge'
 import { NotamTextBox } from './NotamTextBox'
 import type { Notam } from './types'
 
@@ -37,7 +38,7 @@ export const NotamRow = ({ notam, formatEffectiveEnd }: NotamRowProps) => {
       </td>
       <td className="font-mono text-sm">{notam.number}</td>
       <td>
-        <div className="badge badge-outline badge-sm">{notam.type}</div>
+        <NotamTypeBadge type={notam.type} />
       </td>
       <td className="text-sm font-mono">
         {formatEffectiveEnd(notam.effectiveEnd)}

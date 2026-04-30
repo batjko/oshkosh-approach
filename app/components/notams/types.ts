@@ -1,7 +1,9 @@
+import type { NotamType } from '~/utils/notamTypes'
+
 export interface Notam {
   id: string
   number: string
-  type: string
+  type: NotamType
   effectiveStart?: string
   effectiveEnd: string
   text: string

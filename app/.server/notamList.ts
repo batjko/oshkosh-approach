@@ -3,6 +3,7 @@ import type {
   RawFaaNotam,
   RawFaaNotamSearchResponse
 } from './notamSearch.types'
+import { keywordToType, type NotamType } from '../utils/notamTypes'
 import { serverLogger } from './logger'
 import { signNotamTranslationRequest } from './notamTranslationSignature'
 
@@ -44,8 +45,8 @@ const fetchWithHeaderTimeout = async (
 export interface TransformedNotam {
   id: string
   number: string
-  /** Bucketed type for filtering: 'Airport' | 'Runway' | 'Airspace' | 'Navigation' | 'Other'. */
-  type: string
+  /** User-facing type derived from the FAA NOTAM keyword. */
+  type: NotamType
   /** ISO-8601 or `'PERM'`. */
   effectiveStart: string
   /** ISO-8601 or `'PERM'`. */
@@ -64,21 +65,6 @@ export interface NotamFetchResult {
   source: string
   /** Populated only when fetch failed; UI surfaces it. */
   error?: string
-}
-
-/** Map FAA `keyword` → our coarse type bucket. */
-const keywordToType = (keyword?: string): string => {
-  if (!keyword) return 'Other'
-  const k = keyword.toUpperCase()
-  if (k === 'AD' || k === 'AERODROME') return 'Airport'
-  if (k === 'RWY' || k === 'RUNWAY') return 'Runway'
-  if (k === 'TWY' || k === 'APRON' || k === 'PARKING') return 'Airport'
-  if (k === 'AIRSPACE' || k === 'TFR' || k === 'SPECIAL') return 'Airspace'
-  if (k === 'NAV' || k === 'COM' || k === 'IAP' || k === 'SID' || k === 'STAR') {
-    return 'Navigation'
-  }
-  if (k === 'OBST') return 'Airspace'
-  return 'Other'
 }
 
 /**

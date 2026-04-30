@@ -11,6 +11,7 @@ import {
   filterNotamsBySearch,
   sortNotamsByPriority
 } from '~/utils/notamFilters'
+import { NOTAM_TYPE_FILTERS } from '~/utils/notamTypes'
 import { clientLogger } from '~/lib/clientLogger'
 import { NotamRow } from './NotamRow'
 import type { Notam } from './types'
@@ -21,8 +22,6 @@ interface NotamListProps {
   source: string
   fetchError?: string
 }
-
-const notamTypes = ['All', 'Airport', 'Runway', 'Airspace', 'Navigation', 'Other']
 
 const formatFetchedAt = (iso: string): string => {
   if (!iso) return '—'
@@ -127,7 +126,7 @@ export const NotamList = ({
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
             >
-              {notamTypes.map((type) => (
+              {NOTAM_TYPE_FILTERS.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
@@ -175,7 +174,7 @@ export const NotamList = ({
                 <tr>
                   <th className="w-12">Priority</th>
                   <th className="w-20">Number</th>
-                  <th className="w-24">Type</th>
+                  <th className="w-36">Type</th>
                   <th className="w-28">Valid until</th>
                   <th>Details</th>
                 </tr>
