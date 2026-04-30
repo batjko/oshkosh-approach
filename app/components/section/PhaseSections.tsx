@@ -3,7 +3,8 @@ import {
   MdMenuBook,
   MdRoute,
   MdNotificationsActive,
-  MdFlightLand
+  MdFlightLand,
+  MdAutoAwesome
 } from 'react-icons/md'
 import { useAppStore, type SectionId } from '~/store/useAppStore'
 import { phaseById, type PhaseId } from '~/content/oshkosh'
@@ -37,7 +38,15 @@ const TAB_META: Record<
   transitions: { label: 'Transitions', icon: <MdRoute className="h-4 w-4" /> },
   notams: {
     label: 'NOTAMs',
-    icon: <MdNotificationsActive className="h-4 w-4" />
+    icon: (
+      <span className="relative inline-flex">
+        <MdNotificationsActive className="h-4 w-4" />
+        <MdAutoAwesome
+          aria-hidden="true"
+          className="absolute -right-1.5 -top-1 h-2.5 w-2.5 text-warning/80"
+        />
+      </span>
+    )
   },
   runway: { label: 'Runway', icon: <MdFlightLand className="h-4 w-4" /> }
 }
