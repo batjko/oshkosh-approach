@@ -9,4 +9,11 @@ export interface Notam {
   text: string
   icaoLocation?: string
   translationToken?: string
+  cachedTranslation?: {
+    html: string
+    summary: string
+    generatedAt: string
+    modelId: string
+    promptSchemaVersion: string
+  }
 }

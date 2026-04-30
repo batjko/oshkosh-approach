@@ -6,7 +6,7 @@
  * - Logger calls do NOT write to the browser console; if you want
  *   something in the console too, log it explicitly there.
  */
-import posthog from 'posthog-js'
+import posthogJs from 'posthog-js'
 
 type Attrs = Record<
   string,
@@ -21,7 +21,7 @@ const safe = (
   attributes?: Attrs
 ) => {
   if (!isBrowser()) return
-  const logger = posthog.logger
+  const logger = posthogJs.logger
   if (!logger) return
   try {
     logger[level](body, attributes)

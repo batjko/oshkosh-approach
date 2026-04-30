@@ -43,7 +43,7 @@ const TAB_META: Record<
         <MdNotificationsActive className="h-4 w-4" />
         <MdAutoAwesome
           aria-hidden="true"
-          className="absolute -right-1.5 -top-1 h-2.5 w-2.5 text-warning/80"
+          className="absolute -left-1.5 -top-1 h-2.5 w-2.5 text-warning/80"
         />
       </span>
     )
@@ -90,7 +90,8 @@ export const PhaseSections = ({
       effectiveEnd: p.effectiveEnd,
       text: p.text,
       icaoLocation: p.icaoLocation,
-      translationToken: p.translationToken
+      translationToken: p.translationToken,
+      cachedTranslation: p.cachedTranslation
     }))
   })()
 

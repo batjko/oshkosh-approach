@@ -6,6 +6,10 @@ import type {
 import { keywordToType, type NotamType } from '../utils/notamTypes'
 import { serverLogger } from './logger'
 import { signNotamTranslationRequest } from './notamTranslationSignature'
+import {
+  getCachedNotamTranslation,
+  type NotamTranslationValue
+} from './notamTranslation'
 
 // FAA Akamai edge resolves both A and AAAA. Some Node SSR runtimes hang
 // on IPv6 attempts before falling back to IPv4. Force IPv4-first so the
@@ -55,6 +59,7 @@ export interface TransformedNotam {
   icaoLocation: string
   airportName?: string
   translationToken?: string
+  cachedTranslation?: NotamTranslationValue
 }
 
 export interface NotamFetchResult {
@@ -169,6 +174,18 @@ export const transformNotamList = (
     .filter((n) => isCurrentlyActive(n, now))
 }
 
+const attachCachedTranslations = async (
+  notams: TransformedNotam[]
+): Promise<TransformedNotam[]> =>
+  Promise.all(
+    notams.map(async (notam) => {
+      const cachedTranslation = await getCachedNotamTranslation(notam)
+      return cachedTranslation
+        ? { ...notam, cachedTranslation }
+        : notam
+    })
+  )
+
 const buildSearchBody = (icao: string): string =>
   new URLSearchParams({
     searchType: '0',
@@ -233,7 +250,7 @@ export async function getKoshNotams(
     }
 
     const json = (await response.json()) as RawFaaNotamSearchResponse
-    const notamList = transformNotamList(json)
+    const notamList = await attachCachedTranslations(transformNotamList(json))
     const elapsedMs = Date.now() - startedAt
     serverLogger.info('notam.fetch.success', {
       icao,

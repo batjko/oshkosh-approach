@@ -95,10 +95,14 @@ const retryLabelFor = (status: TranslationStatus): string => {
 
 export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [status, setStatus] = useState<TranslationStatus>('idle')
-  const [translation, setTranslation] = useState<TranslationValue | null>(null)
-  const [showTranslation, setShowTranslation] = useState(false)
-  const [requested, setRequested] = useState(false)
+  const [status, setStatus] = useState<TranslationStatus>(
+    notam.cachedTranslation ? 'ready' : 'idle'
+  )
+  const [translation, setTranslation] = useState<TranslationValue | null>(
+    notam.cachedTranslation ?? null
+  )
+  const [showTranslation, setShowTranslation] = useState(Boolean(notam.cachedTranslation))
+  const [requested, setRequested] = useState(Boolean(notam.cachedTranslation))
   const [retryAfter, setRetryAfter] = useState(0)
   const [now, setNow] = useState(() => Date.now())
   const [isFresh, setIsFresh] = useState(false)
@@ -147,13 +151,14 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
   )
 
   useEffect(() => {
-    setStatus('idle')
-    setTranslation(null)
-    setShowTranslation(false)
-    setRequested(false)
+    setStatus(notam.cachedTranslation ? 'ready' : 'idle')
+    setTranslation(notam.cachedTranslation ?? null)
+    setShowTranslation(Boolean(notam.cachedTranslation))
+    setRequested(Boolean(notam.cachedTranslation))
     setRetryAfter(0)
     setIsFresh(false)
   }, [
+    notam.cachedTranslation,
     notam.effectiveEnd,
     notam.effectiveStart,
     notam.icaoLocation,

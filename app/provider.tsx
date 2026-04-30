@@ -1,4 +1,4 @@
-import posthog from 'posthog-js'
+import posthogJs from 'posthog-js'
 import { PostHogProvider } from '@posthog/react'
 
 import { initAnalytics } from '~/utils/analytics'
@@ -17,5 +17,5 @@ if (typeof window !== 'undefined') {
 }
 
 export const PHProvider = ({ children }: { children: React.ReactNode }) => {
-  return <PostHogProvider client={posthog}>{children}</PostHogProvider>
+  return <PostHogProvider client={posthogJs}>{children}</PostHogProvider>
 }

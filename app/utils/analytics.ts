@@ -1,4 +1,4 @@
-import posthog from 'posthog-js'
+import posthogJs from 'posthog-js'
 import type { PhaseId } from '~/content/oshkosh'
 import type { AppMode, SectionId, SheetId } from '~/store/useAppStore'
 
@@ -44,7 +44,7 @@ export const initAnalytics = (): void => {
   const token = resolveToken()
   if (!token) return
 
-  posthog.init(token, {
+  posthogJs.init(token, {
     api_host: resolveHost(),
     defaults: '2026-01-30',
     person_profiles: 'identified_only',
@@ -144,5 +144,5 @@ export const trackAppEvent = <Name extends AppEventName>(
 ): void => {
   if (typeof window === 'undefined') return
   if (!initialized) return
-  posthog.capture(name, properties)
+  posthogJs.capture(name, properties)
 }

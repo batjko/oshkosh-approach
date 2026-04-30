@@ -459,6 +459,10 @@ export const translateNotam = async (
   )
 
   if (cached) {
+    serverLogger.debug('notam.translation.cache.hit', {
+      cacheKey: key,
+      modelId
+    })
     return {
       status: 'ready',
       cacheKey: key,
@@ -466,6 +470,11 @@ export const translateNotam = async (
       translation: cached
     }
   }
+
+  serverLogger.debug('notam.translation.cache.miss', {
+    cacheKey: key,
+    modelId
+  })
 
   const existing = inFlight.get(key)
   if (existing) return existing
@@ -476,4 +485,25 @@ export const translateNotam = async (
     })
   inFlight.set(key, promise)
   return promise
+}
+
+export const getCachedNotamTranslation = async (
+  notam: NotamTranslationRequest
+): Promise<NotamTranslationValue | null> => {
+  const modelId = process.env.OPENROUTER_NOTAM_MODEL_ID
+  if (!modelId) return null
+
+  const identity: NotamTranslationCacheIdentity = {
+    id: notam.id,
+    number: notam.number,
+    type: notam.type,
+    icaoLocation: notam.icaoLocation,
+    effectiveStart: notam.effectiveStart,
+    effectiveEnd: notam.effectiveEnd,
+    text: notam.text,
+    modelId,
+    promptSchemaVersion: PROMPT_SCHEMA_VERSION
+  }
+  const { key, sourceHash } = buildNotamTranslationCacheKey(identity)
+  return readNotamTranslationCache<NotamTranslationValue>(key, sourceHash)
 }
