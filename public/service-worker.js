@@ -1,13 +1,19 @@
-const CACHE_NAME = 'eaa-approach-v4';
-const STATIC_CACHE_NAME = 'eaa-approach-static-v4';
-const DYNAMIC_CACHE_NAME = 'eaa-approach-dynamic-v4';
+const CACHE_NAME = 'eaa-approach-v5';
+const STATIC_CACHE_NAME = 'eaa-approach-static-v5';
+const DYNAMIC_CACHE_NAME = 'eaa-approach-dynamic-v5';
 
-// Essential assets that should always be cached
+// Essential assets that should always be cached. Pre-caching the PWA
+// icon set lets a freshly-installed home-screen launch render correctly
+// even if the first launch is offline.
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/favicon.ico',
-  // Add core routes and assets
+  '/favicon.svg',
+  '/apple-touch-icon.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/browserconfig.xml'
 ];
 
 // Assets that can be cached dynamically

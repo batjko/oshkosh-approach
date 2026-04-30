@@ -121,6 +121,15 @@ export type AppEventMap = {
     medium: number
     low: number
   }
+  'pwa install prompted': {
+    /** User-facing trigger that opened the native install prompt. */
+    surface: 'overflow_menu'
+    outcome: 'accepted' | 'dismissed' | 'unavailable'
+  }
+  'pwa installed': {
+    /** Captured from the `appinstalled` event - user has installed. */
+    display_mode: 'standalone' | 'minimal-ui' | 'browser' | 'unknown'
+  }
 }
 
 export type AppEventName = keyof AppEventMap

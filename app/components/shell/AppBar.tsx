@@ -8,10 +8,12 @@ import {
   MdRestartAlt,
   MdLocalParking,
   MdLocalAirport,
-  MdAirlineStops
+  MdAirlineStops,
+  MdInstallMobile
 } from 'react-icons/md'
 import { ModeToggle } from '~/components/ui/ModeToggle'
 import { useAppStore } from '~/store/useAppStore'
+import { usePwaInstall } from '~/hooks/usePwaInstall'
 
 const OverflowMenu = () => {
   const [open, setOpen] = useState(false)
@@ -23,6 +25,7 @@ const OverflowMenu = () => {
   const resetOnboarding = useAppStore((s) => s.resetOnboarding)
   const openSheet = useAppStore((s) => s.openSheetAction)
   const mode = useAppStore((s) => s.mode)
+  const { canInstall, promptInstall } = usePwaInstall()
 
   useEffect(() => {
     if (!open) return
@@ -55,6 +58,21 @@ const OverflowMenu = () => {
           role="menu"
           className="absolute right-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-cockpit border border-base-300 bg-base-100 shadow-cockpit"
         >
+          {canInstall && (
+            <li role="none" className="border-b border-base-300">
+              <button
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  void promptInstall()
+                  setOpen(false)
+                }}
+                className="flex w-full items-center gap-2 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+              >
+                <MdInstallMobile className="h-4 w-4" /> Install app
+              </button>
+            </li>
+          )}
           <li role="none">
             <button
               role="menuitem"

@@ -1,9 +1,46 @@
 {
-    "name": "EAA Airventure Oshkosh Approach",
-    "short_name": "Oshkosh Approach Guide",
-    "start_url": "/",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#000000",
-    "description": "A guide for the Fisk Approach at EAA Airventure Oshkosh"
-  }
+  "id": "/?source=pwa",
+  "name": "Oshkosh Approach - Fisk VFR arrival companion",
+  "short_name": "Oshkosh Approach",
+  "description": "Source-backed Fisk VFR arrival companion for EAA AirVenture Oshkosh (KOSH). Read the official FAA AirVenture Notice; this app surfaces frequencies, transitions, runway dots, holds, alternates, divert triggers, and live KOSH NOTAMs.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#f5efe1",
+  "theme_color": "#1f4e8c",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["travel", "navigation", "utilities"],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

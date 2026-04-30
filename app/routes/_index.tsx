@@ -7,6 +7,19 @@ import { useLoaderData } from '@remix-run/react'
 import { getKoshNotams, type NotamFetchResult } from '../.server/notamList'
 import { FiskApproachApp } from '~/components/FiskApproachApp'
 import { clientLogger } from '~/lib/clientLogger'
+import {
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TITLE,
+  SOCIAL_IMAGE_HEIGHT,
+  SOCIAL_IMAGE_PATH,
+  SOCIAL_IMAGE_TYPE,
+  SOCIAL_IMAGE_WIDTH,
+  TWITTER_CARD,
+  absoluteUrl,
+  jsonLdMeta
+} from '~/utils/seo'
 
 const NO_STORE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -21,15 +34,42 @@ export const loader: LoaderFunction = async () => {
   return json(result, { headers: NO_STORE_HEADERS })
 }
 
+const CANONICAL_URL = absoluteUrl('/')
+const SOCIAL_IMAGE_URL = absoluteUrl(SOCIAL_IMAGE_PATH)
+
 export const meta: MetaFunction = () => [
-  { charset: 'utf-8' },
-  { title: 'EAA AirVenture Oshkosh - Approach companion' },
-  { viewport: 'width=device-width,initial-scale=1, viewport-fit=cover' },
-  {
-    name: 'description',
-    content:
-      'Source-backed Fisk VFR arrival companion for EAA AirVenture Oshkosh 2026 - read the official Notice before you fly.'
-  }
+  { title: SITE_TITLE },
+  { name: 'description', content: SITE_DESCRIPTION },
+  { name: 'keywords', content: SITE_KEYWORDS.join(', ') },
+  { name: 'application-name', content: SITE_NAME },
+  { name: 'apple-mobile-web-app-title', content: SITE_NAME },
+  { name: 'apple-mobile-web-app-capable', content: 'yes' },
+  { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+  { name: 'mobile-web-app-capable', content: 'yes' },
+  { name: 'format-detection', content: 'telephone=no' },
+  { name: 'robots', content: 'index,follow,max-image-preview:large' },
+  { name: 'googlebot', content: 'index,follow,max-image-preview:large' },
+  { name: 'author', content: SITE_NAME },
+  { name: 'category', content: 'Aviation' },
+  { name: 'rating', content: 'general' },
+  { property: 'og:type', content: 'website' },
+  { property: 'og:site_name', content: SITE_NAME },
+  { property: 'og:title', content: SITE_TITLE },
+  { property: 'og:description', content: SITE_DESCRIPTION },
+  { property: 'og:url', content: CANONICAL_URL },
+  { property: 'og:locale', content: 'en_US' },
+  { property: 'og:image', content: SOCIAL_IMAGE_URL },
+  { property: 'og:image:type', content: SOCIAL_IMAGE_TYPE },
+  { property: 'og:image:width', content: String(SOCIAL_IMAGE_WIDTH) },
+  { property: 'og:image:height', content: String(SOCIAL_IMAGE_HEIGHT) },
+  { property: 'og:image:alt', content: `${SITE_NAME} app icon` },
+  { name: 'twitter:card', content: TWITTER_CARD },
+  { name: 'twitter:title', content: SITE_TITLE },
+  { name: 'twitter:description', content: SITE_DESCRIPTION },
+  { name: 'twitter:image', content: SOCIAL_IMAGE_URL },
+  { name: 'twitter:image:alt', content: `${SITE_NAME} app icon` },
+  { tagName: 'link', rel: 'canonical', href: CANONICAL_URL },
+  jsonLdMeta()
 ]
 
 export default function Index() {

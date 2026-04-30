@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Oshkosh Approach app icon">
+  <title>Oshkosh Approach</title>
+  <rect width="64" height="64" rx="14" ry="14" fill="#1f4e8c"/>
+  <text
+    x="32"
+    y="42"
+    text-anchor="middle"
+    font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, 'JetBrains Mono', monospace"
+    font-weight="700"
+    font-size="22"
+    letter-spacing="-1.2"
+    fill="#f8fafc"
+  >OSH</text>
+</svg>
