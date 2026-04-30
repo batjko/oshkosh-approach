@@ -15,14 +15,7 @@ import { MapSection } from './sections/MapSection'
 import { RunwaySection } from './sections/RunwaySection'
 import { NotamSection } from './sections/NotamSection'
 import { TransitionsSection } from './sections/TransitionsSection'
-
-interface NotamItem {
-  id: string
-  number: string
-  type: string
-  effectiveEnd: string
-  text: string
-}
+import type { Notam } from '../notams/types'
 
 const PHASE_TAB_LAYOUT: Record<PhaseId, SectionId[]> = {
   preflight: ['briefing', 'map', 'transitions', 'notams'],
@@ -50,7 +43,7 @@ const TAB_META: Record<
 }
 
 interface PhaseSectionsProps {
-  notamList: NotamItem[]
+  notamList: Notam[]
   fetchedAt: string
   source: string
   fetchError?: string
@@ -79,13 +72,16 @@ export const PhaseSections = ({
   const ids = cockpit ? layout.filter((id) => id !== 'map') : layout
 
   const phaseRelevantNotams = (() => {
-    if (!notamList.length) return [] as NotamItem[]
+    if (!notamList.length) return [] as Notam[]
     return getImportantNotams(notamList).map((p) => ({
       id: p.id,
       number: p.number,
       type: p.type,
+      effectiveStart: p.effectiveStart,
       effectiveEnd: p.effectiveEnd,
-      text: p.text
+      text: p.text,
+      icaoLocation: p.icaoLocation,
+      translationToken: p.translationToken
     }))
   })()
 

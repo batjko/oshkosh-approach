@@ -4,25 +4,16 @@ import {
   MdClear,
   MdWarning,
   MdError,
-  MdInfo,
   MdRefresh
 } from 'react-icons/md'
 import {
   filterNotamsByType,
   filterNotamsBySearch,
-  sortNotamsByPriority,
-  categorizeNotamPriority,
-  type NotamPriority
+  sortNotamsByPriority
 } from '~/utils/notamFilters'
 import { clientLogger } from '~/lib/clientLogger'
-
-interface Notam {
-  id: string
-  number: string
-  type: string
-  effectiveEnd: string
-  text: string
-}
+import { NotamRow } from './NotamRow'
+import type { Notam } from './types'
 
 interface NotamListProps {
   notamList: Notam[]
@@ -68,19 +59,6 @@ export const NotamList = ({
 
   if (sortByPriority) {
     filteredNotams = sortNotamsByPriority(filteredNotams)
-  }
-
-  const getPriorityIcon = (priority: NotamPriority) => {
-    switch (priority.level) {
-      case 'critical':
-        return <MdError className="text-error" />
-      case 'high':
-        return <MdWarning className="text-warning" />
-      case 'medium':
-        return <MdInfo className="text-info" />
-      default:
-        return <MdInfo className="text-base-content/60" />
-    }
   }
 
   const handleRefresh = () => {
@@ -192,54 +170,32 @@ export const NotamList = ({
 
         <div className="overflow-x-auto">
           {filteredNotams.length > 0 ? (
-            <table className="table table-zebra table-sm">
+            <table className="table table-zebra table-sm table-fixed">
               <thead>
                 <tr>
-                  <th>Priority</th>
-                  <th>Number</th>
-                  <th>Type</th>
-                  <th>Valid until</th>
+                  <th className="w-20">Priority</th>
+                  <th className="w-32">Number</th>
+                  <th className="w-28">Type</th>
+                  <th className="w-36">Valid until</th>
                   <th>Details</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredNotams.map((notam) => {
-                  const priority = categorizeNotamPriority(notam.text)
-                  return (
-                    <tr
-                      key={notam.id}
-                      className={
-                        priority.level === 'critical' ? 'bg-error/10' : ''
-                      }
-                    >
-                      <td>
-                        <div
-                          className="tooltip"
-                          data-tip={`Priority: ${priority.level}`}
-                        >
-                          {getPriorityIcon(priority)}
-                        </div>
-                      </td>
-                      <td className="font-mono text-sm">{notam.number}</td>
-                      <td>
-                        <div className="badge badge-outline badge-sm">
-                          {notam.type}
-                        </div>
-                      </td>
-                      <td className="text-sm font-mono">
-                        {formatEffectiveEnd(notam.effectiveEnd)}
-                      </td>
-                      <td className="min-w-[20rem] text-sm">
-                        <div
-                          className="whitespace-pre-wrap break-words"
-                          title={notam.text}
-                        >
-                          {notam.text}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
+                {filteredNotams.map((notam) => (
+                  <NotamRow
+                    key={[
+                      notam.id,
+                      notam.number,
+                      notam.type,
+                      notam.effectiveStart,
+                      notam.effectiveEnd,
+                      notam.icaoLocation,
+                      notam.text
+                    ].join(':')}
+                    notam={notam}
+                    formatEffectiveEnd={formatEffectiveEnd}
+                  />
+                ))}
               </tbody>
             </table>
           ) : (

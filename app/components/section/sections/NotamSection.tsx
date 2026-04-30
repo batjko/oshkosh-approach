@@ -1,15 +1,8 @@
 import { NotamList } from '~/components/notams/NotamList'
-
-interface NotamItem {
-  id: string
-  number: string
-  type: string
-  effectiveEnd: string
-  text: string
-}
+import type { Notam } from '~/components/notams/types'
 
 interface NotamSectionProps {
-  notamList: NotamItem[]
+  notamList: Notam[]
   fetchedAt: string
   source: string
   fetchError?: string

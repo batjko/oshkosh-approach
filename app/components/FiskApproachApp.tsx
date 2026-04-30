@@ -15,17 +15,10 @@ import {
   getCriticalNotams
 } from '~/utils/notamFilters'
 import { trackAppEvent } from '~/utils/analytics'
-
-interface NotamItem {
-  id: string
-  number: string
-  type: string
-  effectiveEnd: string
-  text: string
-}
+import type { Notam } from './notams/types'
 
 interface FiskApproachAppProps {
-  notamList: NotamItem[]
+  notamList: Notam[]
   fetchedAt: string
   source: string
   fetchError?: string

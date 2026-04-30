@@ -4,6 +4,7 @@ import type {
   RawFaaNotamSearchResponse
 } from './notamSearch.types'
 import { serverLogger } from './logger'
+import { signNotamTranslationRequest } from './notamTranslationSignature'
 
 // FAA Akamai edge resolves both A and AAAA. Some Node SSR runtimes hang
 // on IPv6 attempts before falling back to IPv4. Force IPv4-first so the
@@ -34,6 +35,7 @@ export interface TransformedNotam {
   text: string
   icaoLocation: string
   airportName?: string
+  translationToken?: string
 }
 
 export interface NotamFetchResult {
@@ -128,16 +130,23 @@ const cleanMessage = (
   return cleanedPlain || '(No message body provided by FAA)'
 }
 
-const transformNotam = (raw: RawFaaNotam): TransformedNotam => ({
-  id: raw.notamNumber,
-  number: raw.notamNumber,
-  type: keywordToType(raw.keyword),
-  effectiveStart: parseFaaDate(raw.startDate),
-  effectiveEnd: parseFaaDate(raw.endDate),
-  text: cleanMessage(raw.plainLanguageMessage, raw.traditionalMessage),
-  icaoLocation: raw.icaoId,
-  airportName: raw.airportName
-})
+const transformNotam = (raw: RawFaaNotam): TransformedNotam => {
+  const notam = {
+    id: raw.notamNumber,
+    number: raw.notamNumber,
+    type: keywordToType(raw.keyword),
+    effectiveStart: parseFaaDate(raw.startDate),
+    effectiveEnd: parseFaaDate(raw.endDate),
+    text: cleanMessage(raw.plainLanguageMessage, raw.traditionalMessage),
+    icaoLocation: raw.icaoId,
+    airportName: raw.airportName
+  }
+
+  return {
+    ...notam,
+    translationToken: signNotamTranslationRequest(notam)
+  }
+}
 
 export const transformNotamList = (
   raw: RawFaaNotamSearchResponse,

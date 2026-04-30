@@ -1,0 +1,288 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  MdAutoAwesome,
+  MdCode,
+  MdErrorOutline,
+  MdHourglassEmpty,
+  MdRefresh
+} from 'react-icons/md'
+
+import type { Notam } from './types'
+
+type TranslationStatus =
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'timeout'
+  | 'unavailable'
+  | 'invalid'
+  | 'error'
+
+interface TranslationValue {
+  html: string
+  summary: string
+  generatedAt: string
+  modelId: string
+  promptSchemaVersion: string
+}
+
+interface TranslationResponse {
+  status: TranslationStatus
+  cached?: boolean
+  translation?: TranslationValue
+  error?: string
+  retryAfterMs?: number
+}
+
+interface NotamTextBoxProps {
+  notam: Notam
+}
+
+const MAX_CONCURRENT_TRANSLATIONS = 2
+const RETRY_COOLDOWN_MS = 5_000
+
+let activeTranslations = 0
+const translationQueue: Array<() => void> = []
+
+const enqueueTranslation = async <T,>(task: () => Promise<T>): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const run = () => {
+      activeTranslations += 1
+      task()
+        .then(resolve)
+        .catch(reject)
+        .finally(() => {
+          activeTranslations -= 1
+          translationQueue.shift()?.()
+        })
+    }
+
+    if (activeTranslations < MAX_CONCURRENT_TRANSLATIONS) {
+      run()
+      return
+    }
+
+    translationQueue.push(run)
+  })
+
+const fetchTranslation = async (notam: Notam): Promise<TranslationResponse> => {
+  const response = await fetch('/api/translate-notam', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: notam.id,
+      number: notam.number,
+      type: notam.type,
+      effectiveStart: notam.effectiveStart,
+      effectiveEnd: notam.effectiveEnd,
+      text: notam.text,
+      icaoLocation: notam.icaoLocation,
+      translationToken: notam.translationToken
+    })
+  })
+
+  return (await response.json()) as TranslationResponse
+}
+
+const retryLabelFor = (status: TranslationStatus): string => {
+  if (status === 'timeout') return 'AI explanation timed out. Retry.'
+  if (status === 'unavailable') return 'AI explanation unavailable.'
+  if (status === 'invalid') return 'AI explanation failed validation. Retry.'
+  if (status === 'error') return 'AI explanation failed. Retry.'
+  return 'Explain NOTAM'
+}
+
+export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [status, setStatus] = useState<TranslationStatus>('idle')
+  const [translation, setTranslation] = useState<TranslationValue | null>(null)
+  const [showTranslation, setShowTranslation] = useState(false)
+  const [requested, setRequested] = useState(false)
+  const [retryAfter, setRetryAfter] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
+  const [isFresh, setIsFresh] = useState(false)
+
+  const requestTranslation = useCallback(
+    (force = false) => {
+      if (status === 'loading') return
+      if (requested && !force) return
+      if (retryAfter > Date.now()) {
+        setNow(Date.now())
+        return
+      }
+
+      setRequested(true)
+      setStatus('loading')
+      enqueueTranslation(() => fetchTranslation(notam))
+        .then((result) => {
+          if (result.status === 'ready' && result.translation) {
+            setTranslation(result.translation)
+            setStatus('ready')
+            setIsFresh(true)
+            window.setTimeout(() => setIsFresh(false), 900)
+            return
+          }
+
+          setShowTranslation(false)
+          setStatus(result.status)
+          if (
+            result.status === 'timeout' ||
+            result.status === 'error' ||
+            result.status === 'invalid'
+          ) {
+            setRetryAfter(
+              Date.now() + (result.retryAfterMs ?? RETRY_COOLDOWN_MS)
+            )
+          }
+        })
+        .catch(() => {
+          setShowTranslation(false)
+          setStatus('error')
+          setRetryAfter(Date.now() + RETRY_COOLDOWN_MS)
+        })
+    },
+    [notam, requested, retryAfter, status]
+  )
+
+  useEffect(() => {
+    setStatus('idle')
+    setTranslation(null)
+    setShowTranslation(false)
+    setRequested(false)
+    setRetryAfter(0)
+    setIsFresh(false)
+  }, [
+    notam.effectiveEnd,
+    notam.effectiveStart,
+    notam.icaoLocation,
+    notam.id,
+    notam.number,
+    notam.text,
+    notam.type
+  ])
+
+  useEffect(() => {
+    if (retryAfter <= now) return
+    const timeoutId = window.setTimeout(() => {
+      setNow(Date.now())
+    }, retryAfter - now)
+    return () => window.clearTimeout(timeoutId)
+  }, [now, retryAfter])
+
+  useEffect(() => {
+    const node = containerRef.current
+    if (!node || requested) return
+
+    if (!('IntersectionObserver' in window)) {
+      requestTranslation()
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          requestTranslation()
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '160px' }
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [requestTranslation, requested])
+
+  const showErrorState =
+    status === 'timeout' ||
+    status === 'error' ||
+    status === 'invalid' ||
+    status === 'unavailable'
+  const cooldownActive = retryAfter > now
+  const handleButtonClick = () => {
+    if (status === 'ready') {
+      setShowTranslation((current) => !current)
+      return
+    }
+    requestTranslation(true)
+  }
+
+  const buttonLabel =
+    status === 'ready'
+      ? showTranslation
+        ? 'Show raw FAA NOTAM text'
+        : 'Show AI explanation'
+      : cooldownActive
+        ? 'Retry available shortly'
+      : retryLabelFor(status)
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative max-w-[42rem] rounded-lg border border-base-300 bg-base-100"
+    >
+      <button
+        type="button"
+        className="btn btn-circle btn-ghost btn-xs absolute right-1 top-1 z-10 bg-base-100/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        onClick={handleButtonClick}
+        disabled={status === 'loading' || status === 'unavailable' || cooldownActive}
+        aria-label={buttonLabel}
+        title={buttonLabel}
+      >
+        {status === 'loading'
+          ? <MdHourglassEmpty className="h-3.5 w-3.5 animate-pulse motion-reduce:animate-none" />
+          : status === 'ready'
+            ? showTranslation
+              ? <MdCode className="h-3.5 w-3.5" />
+              : <MdAutoAwesome className="h-3.5 w-3.5 text-warning" />
+            : showErrorState
+              ? <MdRefresh className="h-3.5 w-3.5" />
+              : <MdAutoAwesome className="h-3.5 w-3.5" />}
+      </button>
+
+      <div className="max-h-64 overflow-y-auto p-3 pr-8">
+        {showTranslation && translation
+          ? (
+            <div
+              className={[
+                'space-y-2 text-sm leading-relaxed text-base-content transition-opacity duration-300 motion-reduce:transition-none',
+                isFresh ? 'opacity-80' : 'opacity-100',
+                '[&_h4]:mt-2 [&_h4]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2'
+              ].join(' ')}
+              dangerouslySetInnerHTML={{ __html: translation.html }}
+            />
+            )
+          : (
+            <div
+              className="whitespace-pre-wrap break-words text-sm"
+              title={notam.text}
+            >
+              {notam.text}
+            </div>
+            )}
+
+        {status === 'ready' && !showTranslation && (
+          <div
+            className={[
+              'mt-2 inline-flex items-center gap-1 rounded-full bg-warning/10 px-2 py-1 text-[0.7rem] font-medium text-warning transition-opacity duration-300 motion-reduce:transition-none',
+              isFresh ? 'opacity-100' : 'opacity-80'
+            ].join(' ')}
+          >
+            <MdAutoAwesome className="h-3 w-3" />
+            AI explanation ready
+          </div>
+        )}
+
+        {showErrorState && (
+          <div className="mt-2 flex items-center gap-1 text-[0.7rem] text-base-content/60">
+            <MdErrorOutline className="h-3 w-3" />
+            {status === 'unavailable'
+              ? 'AI explanation is not configured. Raw FAA text remains shown.'
+              : cooldownActive
+                ? 'Explanation unavailable. Retry will be available shortly.'
+                : 'Explanation unavailable. Raw FAA text remains shown.'}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
