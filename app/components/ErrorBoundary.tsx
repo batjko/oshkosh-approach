@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { MdError, MdRefresh } from 'react-icons/md'
+import { clientLogger } from '~/lib/clientLogger'
 
 interface Props {
   children: ReactNode
@@ -23,6 +24,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo)
+    clientLogger.error('client.errorBoundary', {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack ?? undefined
+    })
   }
 
   handleReset = () => {

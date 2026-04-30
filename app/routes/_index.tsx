@@ -6,6 +6,7 @@ import { useLoaderData } from '@remix-run/react'
 
 import { getKoshNotams, type NotamFetchResult } from '../.server/notamList'
 import { FiskApproachApp } from '~/components/FiskApproachApp'
+import { clientLogger } from '~/lib/clientLogger'
 
 const NO_STORE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -38,7 +39,18 @@ export default function Index() {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
     navigator.serviceWorker
       .register('/service-worker.js')
-      .catch((err) => console.error('Service worker registration failed:', err))
+      .then((reg) =>
+        clientLogger.info('sw.registered', {
+          scope: reg.scope,
+          updateViaCache: reg.updateViaCache
+        })
+      )
+      .catch((err) => {
+        console.error('Service worker registration failed:', err)
+        clientLogger.error('sw.registration.failed', {
+          message: err instanceof Error ? err.message : String(err)
+        })
+      })
   }, [])
 
   return (

@@ -14,6 +14,7 @@ import {
   categorizeNotamPriority,
   type NotamPriority
 } from '~/utils/notamFilters'
+import { clientLogger } from '~/lib/clientLogger'
 
 interface Notam {
   id: string
@@ -84,6 +85,9 @@ export const NotamList = ({
 
   const handleRefresh = () => {
     if (typeof window !== 'undefined') {
+      clientLogger.info('notam.refresh.click', {
+        currentCount: notamList.length
+      })
       window.location.reload()
     }
   }

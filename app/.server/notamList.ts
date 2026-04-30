@@ -3,6 +3,7 @@ import type {
   RawFaaNotam,
   RawFaaNotamSearchResponse
 } from './notamSearch.types'
+import { serverLogger } from './logger'
 
 // FAA Akamai edge resolves both A and AAAA. Some Node SSR runtimes hang
 // on IPv6 attempts before falling back to IPv4. Force IPv4-first so the
@@ -195,6 +196,8 @@ export async function getKoshNotams(
 ): Promise<NotamFetchResult> {
   const fetchedAt = new Date().toISOString()
   const source = `FAA NOTAM Search (${icao})`
+  const startedAt = Date.now()
+  serverLogger.info('notam.fetch.start', { icao })
   try {
     const response = await fetch(FAA_NOTAM_SEARCH_URL, {
       method: 'POST',
@@ -218,15 +221,24 @@ export async function getKoshNotams(
     }
 
     const json = (await response.json()) as RawFaaNotamSearchResponse
-    return {
-      notamList: transformNotamList(json),
-      fetchedAt,
-      source
-    }
+    const notamList = transformNotamList(json)
+    const elapsedMs = Date.now() - startedAt
+    serverLogger.info('notam.fetch.success', {
+      icao,
+      count: notamList.length,
+      rawCount: Array.isArray(json?.notamList) ? json.notamList.length : 0,
+      elapsedMs
+    })
+    return { notamList, fetchedAt, source }
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Unknown FAA fetch error'
-    console.error('[notams] FAA fetch failed:', message)
+    const elapsedMs = Date.now() - startedAt
+    serverLogger.error('notam.fetch.failed', {
+      icao,
+      error: message,
+      elapsedMs
+    })
     return {
       notamList: [],
       fetchedAt,
