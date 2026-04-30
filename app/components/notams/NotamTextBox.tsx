@@ -68,17 +68,35 @@ const enqueueTranslation = async <T,>(task: () => Promise<T>): Promise<T> =>
     translationQueue.push(run)
   })
 
-const wait = async (ms: number): Promise<void> =>
-  new Promise((resolve) => window.setTimeout(resolve, ms))
+const abortError = (): DOMException => new DOMException('Aborted', 'AbortError')
+
+const wait = async (ms: number, signal: AbortSignal): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(abortError())
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      signal.removeEventListener('abort', handleAbort)
+      resolve()
+    }, ms)
+    const handleAbort = () => {
+      window.clearTimeout(timeoutId)
+      reject(abortError())
+    }
+    signal.addEventListener('abort', handleAbort, { once: true })
+  })
 
 const fetchTranslation = async (
   notam: Notam,
-  signal: AbortSignal
+  signal: AbortSignal,
+  onPending?: () => void
 ): Promise<TranslationResponse> => {
   const startedAt = Date.now()
 
   while (Date.now() - startedAt < MAX_CLIENT_POLL_MS) {
-    if (signal.aborted) throw new DOMException('Aborted', 'AbortError')
+    if (signal.aborted) throw abortError()
 
     const response = await fetch('/api/translate-notam', {
       method: 'POST',
@@ -97,14 +115,20 @@ const fetchTranslation = async (
     })
 
     const result = (await response.json()) as TranslationResponse
+    if (result.error === 'rate_limited') {
+      await wait(result.retryAfterMs ?? 6_000, signal)
+      continue
+    }
     if (result.status !== 'pending') return result
-    await wait(result.retryAfterMs ?? 6_000)
+    onPending?.()
+    await wait(result.retryAfterMs ?? 6_000, signal)
   }
 
   return { status: 'timeout', error: 'client_poll_timeout' }
 }
 
 const retryLabelFor = (status: TranslationStatus): string => {
+  if (status === 'loading' || status === 'pending') return 'AI explanation loading.'
   if (status === 'timeout') return 'AI explanation timed out. Retry.'
   if (status === 'unavailable') return 'AI explanation unavailable.'
   if (status === 'invalid') return 'AI explanation failed validation. Retry.'
@@ -130,7 +154,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
 
   const requestTranslation = useCallback(
     (force = false) => {
-      if (status === 'loading') return
+      if (status === 'loading' || status === 'pending') return
       if (requested && !force) return
       if (retryAfter > Date.now()) {
         setNow(Date.now())
@@ -142,7 +166,12 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
       abortRef.current = controller
       setRequested(true)
       setStatus('loading')
-      enqueueTranslation(() => fetchTranslation(notam, controller.signal))
+      enqueueTranslation(() =>
+        fetchTranslation(notam, controller.signal, () => {
+          if (!mountedRef.current || controller.signal.aborted) return
+          setStatus('pending')
+        })
+      )
         .then((result) => {
           if (!mountedRef.current || controller.signal.aborted) return
           if (result.status === 'ready' && result.translation) {
@@ -278,11 +307,16 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
         type="button"
         className="btn btn-circle btn-ghost btn-xs absolute right-1 top-1 z-10 bg-base-100/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         onClick={handleButtonClick}
-        disabled={status === 'loading' || status === 'unavailable' || cooldownActive}
+        disabled={
+          status === 'loading' ||
+          status === 'pending' ||
+          status === 'unavailable' ||
+          cooldownActive
+        }
         aria-label={buttonLabel}
         title={buttonLabel}
       >
-        {status === 'loading'
+        {status === 'loading' || status === 'pending'
           ? <MdHourglassEmpty className="h-3.5 w-3.5 animate-pulse motion-reduce:animate-none" />
           : status === 'ready'
             ? showTranslation

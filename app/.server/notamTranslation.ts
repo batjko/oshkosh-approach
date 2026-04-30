@@ -100,6 +100,26 @@ const fetchWithHeaderTimeout = async (
   }
 }
 
+const withTimeout = async <T,>(
+  promise: Promise<T>,
+  timeoutMs: number
+): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      const error = new Error('Translation timed out')
+      error.name = 'TimeoutError'
+      reject(error)
+    }, timeoutMs)
+  })
+
+  try {
+    return await Promise.race([promise, timeout])
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 
@@ -386,83 +406,85 @@ const performTranslation = async (
 ): Promise<NotamTranslationResult> => {
   const startedAt = Date.now()
   try {
-    const response = await fetchWithHeaderTimeout(OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://www.oshkosh-approach.com/',
-        'X-Title': 'Oshkosh Approach'
-      },
-      body: JSON.stringify({
-        model: modelId,
-        messages: buildMessages(notam),
-        temperature: 0.2,
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'notam_explanation',
-            strict: true,
-            schema: responseSchema
+    return await withTimeout((async () => {
+      const response = await fetchWithHeaderTimeout(OPENROUTER_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://www.oshkosh-approach.com/',
+          'X-Title': 'Oshkosh Approach'
+        },
+        body: JSON.stringify({
+          model: modelId,
+          messages: buildMessages(notam),
+          temperature: 0.2,
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'notam_explanation',
+              strict: true,
+              schema: responseSchema
+            }
           }
-        }
-      })
-    }, readTimeoutMs())
+        })
+      }, readTimeoutMs())
 
-    if (!response.ok) {
-      serverLogger.warn('notam.translation.openrouter.failed', {
-        status: response.status,
+      if (!response.ok) {
+        serverLogger.warn('notam.translation.openrouter.failed', {
+          status: response.status,
+          modelId,
+          elapsedMs: Date.now() - startedAt
+        })
+        return { status: 'error', cacheKey: key, error: 'openrouter_failed' }
+      }
+
+      const data = (await response.json()) as OpenRouterResponse
+      const content = data.choices?.[0]?.message?.content
+      if (!content) {
+        return { status: 'invalid', cacheKey: key, error: 'empty_response' }
+      }
+
+      const structured = parseStructuredTranslation(content)
+      if (!structured) {
+        return { status: 'invalid', cacheKey: key, error: 'invalid_json' }
+      }
+
+      const validationError = validateStructuredTranslation(structured)
+      if (validationError) {
+        return { status: 'invalid', cacheKey: key, error: validationError }
+      }
+
+      const translation: NotamTranslationValue = {
+        html: renderTranslationHtml(structured),
+        summary: structured.summary,
+        generatedAt: new Date().toISOString(),
+        modelId,
+        promptSchemaVersion: PROMPT_SCHEMA_VERSION
+      }
+
+      await writeNotamTranslationCache({
+        key,
+        sourceHash,
+        createdAt: translation.generatedAt,
+        modelId,
+        promptSchemaVersion: PROMPT_SCHEMA_VERSION,
+        value: translation
+      })
+
+      serverLogger.info('notam.translation.success', {
+        cacheKey: key,
         modelId,
         elapsedMs: Date.now() - startedAt
       })
-      return { status: 'error', cacheKey: key, error: 'openrouter_failed' }
-    }
 
-    const data = (await response.json()) as OpenRouterResponse
-    const content = data.choices?.[0]?.message?.content
-    if (!content) {
-      return { status: 'invalid', cacheKey: key, error: 'empty_response' }
-    }
-
-    const structured = parseStructuredTranslation(content)
-    if (!structured) {
-      return { status: 'invalid', cacheKey: key, error: 'invalid_json' }
-    }
-
-    const validationError = validateStructuredTranslation(structured)
-    if (validationError) {
-      return { status: 'invalid', cacheKey: key, error: validationError }
-    }
-
-    const translation: NotamTranslationValue = {
-      html: renderTranslationHtml(structured),
-      summary: structured.summary,
-      generatedAt: new Date().toISOString(),
-      modelId,
-      promptSchemaVersion: PROMPT_SCHEMA_VERSION
-    }
-
-    await writeNotamTranslationCache({
-      key,
-      sourceHash,
-      createdAt: translation.generatedAt,
-      modelId,
-      promptSchemaVersion: PROMPT_SCHEMA_VERSION,
-      value: translation
-    })
-
-    serverLogger.info('notam.translation.success', {
-      cacheKey: key,
-      modelId,
-      elapsedMs: Date.now() - startedAt
-    })
-
-    return {
-      status: 'ready',
-      cacheKey: key,
-      cached: false,
-      translation
-    }
+      return {
+        status: 'ready',
+        cacheKey: key,
+        cached: false,
+        translation
+      }
+    })(), readTimeoutMs())
   } catch (error) {
     const status = classifyError(error)
     serverLogger.warn('notam.translation.failed', {
