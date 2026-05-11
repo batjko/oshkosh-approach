@@ -31,6 +31,7 @@ const resolveHost = (): string =>
   readEnv('VITE_PUBLIC_POSTHOG_HOST') ?? DEFAULT_HOST
 
 let initialized = false
+let disabled = false
 
 type QueuedEvent = {
   [Name in AppEventName]: {
@@ -50,17 +51,42 @@ const flushQueuedEvents = (): void => {
   }
 }
 
+const isLocalAnalyticsExplicitlyEnabled = (): boolean =>
+  readEnv('VITE_ENABLE_LOCAL_ANALYTICS') === 'true'
+
+const isLocalHost = (): boolean => {
+  const hostname = globalThis.window.location.hostname
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1' ||
+    hostname === '[::1]'
+  )
+}
+
+const disableAnalytics = (): void => {
+  disabled = true
+  queuedEvents.length = 0
+}
+
 /**
  * Initialize PostHog. Idempotent - safe to call from a provider's
  * post-hydration `useEffect`. Skips entirely on the server and when
  * the token is empty (allows opting out via env in dev/CI).
  */
 export const initAnalytics = (): void => {
-  if (typeof window === 'undefined') return
-  if (initialized) return
+  if (globalThis.window === undefined) return
+  if (initialized || disabled) return
 
   const token = resolveToken()
-  if (!token) return
+  if (!token) {
+    disableAnalytics()
+    return
+  }
+  if (isLocalHost() && !isLocalAnalyticsExplicitlyEnabled()) {
+    disableAnalytics()
+    return
+  }
 
   posthogJs.init(token, {
     api_host: resolveHost(),
@@ -165,7 +191,8 @@ export const trackAppEvent = <Name extends AppEventName>(
   name: Name,
   properties: AppEventMap[Name]
 ): void => {
-  if (typeof window === 'undefined') return
+  if (globalThis.window === undefined) return
+  if (disabled) return
   if (!initialized) {
     queuedEvents.push({ name, properties } as QueuedEvent)
     if (queuedEvents.length > MAX_QUEUED_EVENTS) queuedEvents.shift()

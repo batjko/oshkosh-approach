@@ -18,13 +18,14 @@ export const links: LinksFunction = () => [
   { rel: 'mask-icon', href: '/favicon.svg', color: '#1f4e8c' }
 ]
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html data-theme="chart" lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#1f4e8c" />
+        <meta name="google" content="notranslate" />
         <meta name="msapplication-TileColor" content="#1f4e8c" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
         <meta name="color-scheme" content="light dark" />
