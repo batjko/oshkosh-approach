@@ -72,7 +72,11 @@ export const initAnalytics = (): void => {
     // captures the initial pageview only - additional in-app navigation
     // is tracked via the typed product events below.
     capture_pageview: 'history_change',
-    capture_pageleave: 'if_capture_pageview'
+    capture_pageleave: 'if_capture_pageview',
+    // Surveys stay available, but automatic popovers are suppressed. The
+    // app displays surveys only from the first-party FeedbackPrompt so
+    // cockpit UI is never covered by unsolicited feedback UI.
+    disable_surveys_automatic_display: true
   })
   initialized = true
   flushQueuedEvents()

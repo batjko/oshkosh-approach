@@ -42,51 +42,67 @@ const HoldsSubBlock = () => (
   </section>
 )
 
+const WarningsBlock = ({ warnings }: { warnings: string[] }) => (
+  <section
+    aria-label="Warnings"
+    className="rounded-cockpit border-l-4 border-warning bg-warning/10 p-3"
+  >
+    <h3 className="flex items-center gap-2 text-sm font-semibold text-warning">
+      <MdWarningAmber className="h-4 w-4" /> Watch out
+    </h3>
+    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+      {warnings.map((w) => (
+        <li key={w}>{w}</li>
+      ))}
+    </ul>
+  </section>
+)
+
 export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
-  <div className="space-y-4">
-    <p className="text-base text-base-content">{phase.summary}</p>
+  <div className="grid gap-4 xl:grid-cols-3 xl:items-start">
+    <div className="min-w-0 space-y-4 xl:col-span-2">
+      <p className="text-base text-base-content">{phase.summary}</p>
 
-    <section className="rounded-cockpit bg-base-200 p-3">
-      <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-base-content/60">
-        <MdInfoOutline className="h-4 w-4 text-primary" /> Briefing
-      </h3>
-      <p className="mt-2 text-sm leading-relaxed">{phase.briefing}</p>
-    </section>
-
-    {phase.warnings && phase.warnings.length > 0 && (
-      <section
-        aria-label="Warnings"
-        className="rounded-cockpit border-l-4 border-warning bg-warning/10 p-3"
-      >
-        <h3 className="flex items-center gap-2 text-sm font-semibold text-warning">
-          <MdWarningAmber className="h-4 w-4" /> Watch out
+      <section className="rounded-cockpit bg-base-200 p-3">
+        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-base-content/60">
+          <MdInfoOutline className="h-4 w-4 text-primary" /> Briefing
         </h3>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-          {phase.warnings.map((w) => (
-            <li key={w}>{w}</li>
-          ))}
-        </ul>
+        <p className="mt-2 text-sm leading-relaxed">{phase.briefing}</p>
       </section>
-    )}
 
-    <section aria-label="Primary actions" className="space-y-2">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-        Do this
-      </h3>
-      <Checklist items={phase.primaryActions} variant="default" />
-    </section>
+      {phase.warnings && phase.warnings.length > 0 && (
+        <div className="xl:hidden">
+          <WarningsBlock warnings={phase.warnings} />
+        </div>
+      )}
 
-    {phase.secondaryActions && phase.secondaryActions.length > 0 && (
-      <section aria-label="Secondary actions" className="space-y-2">
+      <section aria-label="Primary actions" className="space-y-2">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-          If time permits
+          Do this
         </h3>
-        <Checklist items={phase.secondaryActions} />
+        <Checklist items={phase.primaryActions} variant="default" />
       </section>
-    )}
 
-    {showHolds && <HoldsSubBlock />}
+      {phase.secondaryActions && phase.secondaryActions.length > 0 && (
+        <section aria-label="Secondary actions" className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+            If time permits
+          </h3>
+          <Checklist items={phase.secondaryActions} />
+        </section>
+      )}
 
-    <SourceBadge ids={phase.sources} />
+      {showHolds && <HoldsSubBlock />}
+    </div>
+
+    <aside className="space-y-4 xl:sticky xl:top-36">
+      {phase.warnings && phase.warnings.length > 0 && (
+        <div className="hidden xl:block">
+          <WarningsBlock warnings={phase.warnings} />
+        </div>
+      )}
+
+      <SourceBadge ids={phase.sources} />
+    </aside>
   </div>
 )

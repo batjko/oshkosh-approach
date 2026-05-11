@@ -12,6 +12,9 @@ export default {
   content: ['./app/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {
+      screens: {
+        tablet: '744px'
+      },
       colors: {
         chart: {
           paper: '#f5efe1',

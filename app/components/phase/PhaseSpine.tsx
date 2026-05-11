@@ -33,7 +33,7 @@ export const PhaseSpine = () => {
       <div className="mx-auto w-full max-w-screen-xl">
         <div
           ref={containerRef}
-          className="overflow-x-auto px-3 py-2"
+          className="overflow-x-auto px-3 py-2 scrollbar-none scroll-fade-x tablet:px-6 tablet:scroll-fade-x-none"
           style={{ scrollSnapType: 'x mandatory' }}
         >
           <ol className="flex min-w-min items-center gap-1">
@@ -44,7 +44,7 @@ export const PhaseSpine = () => {
               return (
                 <li
                   key={phase.id}
-                  className="contents"
+                  className="flex shrink-0 items-center"
                   style={{ scrollSnapAlign: 'center' }}
                 >
                   <button
@@ -54,7 +54,7 @@ export const PhaseSpine = () => {
                     disabled={disabled}
                     aria-current={isCurrent ? 'step' : undefined}
                     title={`Phase ${phase.order + 1}: ${phase.title}`}
-                    className={`tap-target inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-2 text-xs font-semibold transition ${
+                    className={`tap-target inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 text-xs font-semibold transition ${
                       isCurrent
                         ? 'border-primary bg-primary text-primary-content shadow-cockpit'
                         : isPast

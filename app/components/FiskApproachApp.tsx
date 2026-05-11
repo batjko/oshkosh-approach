@@ -26,7 +26,7 @@ interface FiskApproachAppProps {
 
 const FlightInlineMap = () => (
   <div className="mt-4">
-    <MapSection heightClass="h-[40vh] min-h-[18rem]" />
+    <MapSection heightClass="h-[clamp(18rem,42dvh,34rem)]" />
   </div>
 )
 

@@ -30,6 +30,20 @@ export const dismissNotification = (id: string) => {
   notificationListeners.forEach((listener) => listener(notifications))
 }
 
+export const useNotificationCount = () => {
+  const [count, setCount] = useState(notifications.length)
+
+  useEffect(() => {
+    const listener = (next: Notification[]) => setCount(next.length)
+    notificationListeners.push(listener)
+    return () => {
+      notificationListeners = notificationListeners.filter((l) => l !== listener)
+    }
+  }, [])
+
+  return count
+}
+
 const ICONS: Record<NotificationType, JSX.Element> = {
   error: <MdError className="h-5 w-5" />,
   warning: <MdWarning className="h-5 w-5" />,

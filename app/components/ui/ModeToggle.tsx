@@ -25,7 +25,7 @@ export const ModeToggle = () => {
     <div className="join" role="group" aria-label="App mode">
       <button
         type="button"
-        className={`btn btn-sm join-item gap-1 ${
+        className={`btn btn-sm join-item min-h-12 gap-1 px-3 ${
           mode === 'pre-flight' ? 'btn-primary' : 'btn-ghost'
         }`}
         onClick={() => setMode('pre-flight')}
@@ -35,7 +35,7 @@ export const ModeToggle = () => {
       </button>
       <button
         type="button"
-        className={`btn btn-sm join-item gap-1 ${
+        className={`btn btn-sm join-item min-h-12 gap-1 px-3 ${
           mode === 'in-flight' ? 'btn-primary' : 'btn-ghost'
         } ${!inFlightAllowed ? 'opacity-50 cursor-not-allowed' : ''}`}
         onClick={onInFlightClick}

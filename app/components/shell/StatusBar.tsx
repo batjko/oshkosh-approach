@@ -90,9 +90,9 @@ export const StatusBar = () => {
 
   return (
     <div className="border-b border-base-300 bg-base-200/80 backdrop-blur">
-      <div className="mx-auto w-full max-w-screen-xl px-4 py-1.5">
-        <div className="-mx-4 overflow-x-auto px-4">
-          <div className="flex min-w-min items-center gap-1.5">
+      <div className="mx-auto w-full max-w-screen-xl px-4 py-1.5 tablet:px-6">
+        <div className="-mx-4 overflow-x-auto px-4 scrollbar-none scroll-fade-x tablet:mx-0 tablet:overflow-visible tablet:px-0 tablet:scroll-fade-x-none">
+          <div className="flex min-w-min items-center gap-1.5 tablet:min-w-0 tablet:flex-wrap">
             <PillButton
               onClick={() => openSheet('notice')}
               active={noticeOk}
@@ -139,7 +139,7 @@ export const StatusBar = () => {
                 location ? `±${Math.round(location.accuracy)}m` : undefined
               }
             />
-            <span className="ml-auto inline-flex shrink-0 items-center gap-1.5">
+            <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 max-[430px]:pr-2">
               {!online && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">
                   <MdCloudOff className="h-3 w-3" /> Offline

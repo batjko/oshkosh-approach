@@ -5,7 +5,8 @@
 html,
 body {
   overflow-x: hidden;
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
 }
 
 @layer base {
@@ -58,6 +59,30 @@ body {
     min-height: 3rem;
     min-width: 3rem;
   }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-fade-x {
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      black 1rem,
+      black calc(100% - 1rem),
+      transparent
+    );
+  }
+  .scroll-fade-x-none {
+    mask-image: none;
+  }
+}
+
+.leaflet-control-zoom a {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  line-height: 2.75rem;
 }
 
 @keyframes slide-in {

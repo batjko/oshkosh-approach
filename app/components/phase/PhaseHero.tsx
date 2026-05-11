@@ -63,7 +63,7 @@ export const PhaseHero = ({ variant = 'plan' }: PhaseHeroProps) => {
   return (
     <section
       aria-labelledby={`phase-hero-${phase.id}`}
-      className={`mx-auto w-full max-w-screen-xl px-4 ${cockpit ? 'pt-3' : 'pt-4'}`}
+      className={`mx-auto w-full max-w-screen-xl px-4 tablet:px-6 ${cockpit ? 'pt-3' : 'pt-4'}`}
     >
       <div
         className={`briefing-card relative overflow-hidden ${

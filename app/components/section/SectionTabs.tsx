@@ -24,6 +24,7 @@ export const SectionTabs = ({ tabs, panelId }: SectionTabsProps) => {
   const activeSection = useAppStore((s) => s.activeSection)
   const setActiveSection = useAppStore((s) => s.setActiveSection)
   const tablistId = useId()
+  const containerRef = useRef<HTMLDivElement>(null)
   const refs = useRef<Map<SectionId, HTMLButtonElement>>(new Map())
 
   useEffect(() => {
@@ -31,6 +32,14 @@ export const SectionTabs = ({ tabs, panelId }: SectionTabsProps) => {
       setActiveSection(tabs[0].id)
     }
   }, [tabs, activeSection, setActiveSection])
+
+  useEffect(() => {
+    const container = containerRef.current
+    const active = refs.current.get(activeSection)
+    if (!container || !active) return
+    const left = active.offsetLeft - container.offsetWidth / 2 + active.offsetWidth / 2
+    container.scrollTo({ left, behavior: 'smooth' })
+  }, [activeSection, tabs])
 
   const onKey = (e: React.KeyboardEvent, idx: number) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End')
@@ -48,10 +57,11 @@ export const SectionTabs = ({ tabs, panelId }: SectionTabsProps) => {
 
   return (
     <div
+      ref={containerRef}
       role="tablist"
       aria-label="Phase sections"
       id={tablistId}
-      className="-mx-4 overflow-x-auto px-4"
+      className="-mx-4 overflow-x-auto px-4 scrollbar-none scroll-fade-x tablet:mx-0 tablet:px-0 tablet:scroll-fade-x-none"
     >
       <div className="flex min-w-min items-center gap-1 border-b border-base-300">
         {tabs.map((tab, idx) => {
@@ -63,6 +73,7 @@ export const SectionTabs = ({ tabs, panelId }: SectionTabsProps) => {
                 if (el) refs.current.set(tab.id, el)
                 else refs.current.delete(tab.id)
               }}
+              id={`tab-${tab.id}`}
               role="tab"
               type="button"
               aria-selected={active}

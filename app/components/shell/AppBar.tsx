@@ -46,7 +46,7 @@ const OverflowMenu = () => {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="btn btn-ghost btn-circle btn-sm"
+        className="btn btn-ghost btn-circle min-h-12 w-12"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="More options"
@@ -67,7 +67,7 @@ const OverflowMenu = () => {
                   void promptInstall()
                   setOpen(false)
                 }}
-                className="flex w-full items-center gap-2 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                className="flex min-h-12 w-full items-center gap-2 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
               >
                 <MdInstallMobile className="h-4 w-4" /> Install app
               </button>
@@ -81,7 +81,7 @@ const OverflowMenu = () => {
                 toggleTheme()
                 setOpen(false)
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+              className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
             >
               {theme === 'cockpit' ? (
                 <MdLightMode className="h-4 w-4" />
@@ -96,7 +96,7 @@ const OverflowMenu = () => {
               role="menuitem"
               type="button"
               onClick={() => setEnableMap(!enableMap)}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+              className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
             >
               {enableMap ? (
                 <MdMapsHomeWork className="h-4 w-4" />
@@ -114,7 +114,7 @@ const OverflowMenu = () => {
                 openSheet('signs')
                 setOpen(false)
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+              className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
             >
               <MdLocalParking className="h-4 w-4" /> Parking signs
             </button>
@@ -127,7 +127,7 @@ const OverflowMenu = () => {
                 openSheet('alternates')
                 setOpen(false)
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+              className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
             >
               <MdLocalAirport className="h-4 w-4" /> Alternates
             </button>
@@ -141,7 +141,7 @@ const OverflowMenu = () => {
                   openSheet('divert')
                   setOpen(false)
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+                className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
               >
                 <MdAirlineStops className="h-4 w-4" /> Divert briefing
               </button>
@@ -155,7 +155,7 @@ const OverflowMenu = () => {
                 resetOnboarding()
                 setOpen(false)
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-warning hover:bg-warning/10"
+              className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm text-warning hover:bg-warning/10"
             >
               <MdRestartAlt className="h-4 w-4" /> Reset onboarding
             </button>
@@ -172,8 +172,8 @@ export const AppBar = () => (
     role="banner"
     className="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur"
   >
-    <div className="mx-auto flex w-full max-w-screen-xl items-center gap-2 px-4 py-2.5">
-      <div className="flex min-w-0 items-center gap-2.5">
+    <div className="mx-auto flex w-full max-w-screen-xl items-center gap-2 px-4 py-2 tablet:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <div className="grid h-9 w-9 shrink-0 place-items-center rounded-cockpit bg-primary text-primary-content">
           <span className="font-cockpit text-sm font-bold">OSH</span>
         </div>
@@ -181,7 +181,7 @@ export const AppBar = () => (
           <h1 className="truncate text-sm font-semibold leading-tight">
             Oshkosh Approach
           </h1>
-          <p className="truncate text-[11px] text-base-content/60">
+          <p className="truncate text-[11px] text-base-content/60 max-[374px]:hidden">
             Fisk arrival companion
           </p>
         </div>

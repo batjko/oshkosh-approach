@@ -305,7 +305,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
       )}
       <button
         type="button"
-        className="btn btn-circle btn-ghost btn-xs absolute right-1 top-1 z-10 bg-base-100/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="btn btn-circle btn-ghost absolute right-1 top-1 z-10 h-11 min-h-11 w-11 bg-base-100/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         onClick={handleButtonClick}
         disabled={
           status === 'loading' ||
@@ -329,7 +329,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
 
       <div
         className={[
-          'max-h-[22rem] overflow-y-auto overscroll-contain p-3 pr-8 sm:max-h-[26rem] lg:max-h-[30rem]',
+          'max-h-[22rem] overflow-y-auto overscroll-contain p-3 pr-14 sm:max-h-[26rem] lg:max-h-[30rem]',
           showTranslation && translation ? 'pl-8' : ''
         ].join(' ')}
       >

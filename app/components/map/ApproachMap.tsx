@@ -113,12 +113,16 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
 
   const { MapContainer, TileLayer, Marker, Popup, Polyline, Circle } = components
   const phase = phaseById(currentPhase)
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches
 
   return (
     <div className={`relative h-full w-full ${className}`}>
       <MapContainer
         center={center}
         zoom={11}
+        dragging={!coarsePointer}
+        scrollWheelZoom={false}
+        touchZoom={!coarsePointer}
         style={{ height: '100%', width: '100%', minHeight: 280 }}
       >
         <TileLayer

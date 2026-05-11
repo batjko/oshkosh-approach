@@ -6,6 +6,7 @@ import { ErrorBoundary } from '~/components/ErrorBoundary'
 import { ErrorNotification } from '~/components/ui/ErrorNotification'
 import { OfflineIndicator } from '~/components/ui/OfflineIndicator'
 import { OnboardingFlow } from '~/components/onboarding/OnboardingFlow'
+import { FeedbackPrompt } from '~/components/feedback/FeedbackPrompt'
 import { AppBar } from './AppBar'
 import { StatusBar } from './StatusBar'
 import { SkipToContent } from './SkipToContent'
@@ -54,12 +55,13 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
           className="pb-[max(env(safe-area-inset-bottom),1.5rem)] focus:outline-none"
         >
           <PhaseHero variant={mode === 'in-flight' ? 'flight' : 'plan'} />
-          <div className="mx-auto w-full max-w-screen-xl min-w-0 px-4 pt-4">
+          <div className="mx-auto w-full max-w-screen-xl min-w-0 px-4 pt-4 tablet:px-6">
             {children}
           </div>
         </main>
 
         <OfflineIndicator />
+        <FeedbackPrompt />
       </div>
     </ErrorBoundary>
   )
