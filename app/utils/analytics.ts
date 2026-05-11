@@ -32,6 +32,24 @@ const resolveHost = (): string =>
 
 let initialized = false
 
+type QueuedEvent = {
+  [Name in AppEventName]: {
+    name: Name
+    properties: AppEventMap[Name]
+  }
+}[AppEventName]
+
+const MAX_QUEUED_EVENTS = 20
+const queuedEvents: QueuedEvent[] = []
+
+const flushQueuedEvents = (): void => {
+  while (queuedEvents.length > 0) {
+    const event = queuedEvents.shift()
+    if (!event) return
+    posthogJs.capture(event.name, event.properties)
+  }
+}
+
 /**
  * Initialize PostHog. Idempotent - safe to call from a provider's
  * post-hydration `useEffect`. Skips entirely on the server and when
@@ -57,6 +75,7 @@ export const initAnalytics = (): void => {
     capture_pageleave: 'if_capture_pageview'
   })
   initialized = true
+  flushQueuedEvents()
 }
 
 export const isAnalyticsReady = (): boolean => initialized
@@ -143,6 +162,10 @@ export const trackAppEvent = <Name extends AppEventName>(
   properties: AppEventMap[Name]
 ): void => {
   if (typeof window === 'undefined') return
-  if (!initialized) return
+  if (!initialized) {
+    queuedEvents.push({ name, properties } as QueuedEvent)
+    if (queuedEvents.length > MAX_QUEUED_EVENTS) queuedEvents.shift()
+    return
+  }
   posthogJs.capture(name, properties)
 }

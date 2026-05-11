@@ -108,7 +108,11 @@ interface AppState {
   /** Which sheet is open, if any. Session-only. */
   openSheet: SheetId | null
 
+  /** Whether persisted browser state has been loaded after hydration. */
+  hasHydrated: boolean
+
   // Actions
+  setHasHydrated: (hasHydrated: boolean) => void
   setCurrentPhase: (id: PhaseId, source?: PhaseChangeSource) => void
   nextPhase: () => void
   prevPhase: () => void
@@ -145,6 +149,9 @@ export const useAppStore = create<AppState>()(
       onboardingComplete: false,
       activeSection: defaultSectionForPhase(firstPhase.id),
       openSheet: null,
+      hasHydrated: false,
+
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
       setCurrentPhase: (id, source = 'spine') => {
         if (!phaseById(id)) return
@@ -290,10 +297,19 @@ export const useAppStore = create<AppState>()(
         assignedRunwayId: state.assignedRunwayId,
         gpsEnabled: state.gpsEnabled,
         onboardingComplete: state.onboardingComplete
-      })
+      }),
+      skipHydration: true,
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true)
+      }
     }
   )
 )
+
+export const hydrateAppStore = (): void => {
+  if (useAppStore.persist.hasHydrated()) return
+  void useAppStore.persist.rehydrate()
+}
 
 export const phaseOrderOf = (id: PhaseId): number =>
   phaseById(id)?.order ?? 0

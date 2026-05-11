@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
-import { useAppStore } from '~/store/useAppStore'
+import { hydrateAppStore, useAppStore } from '~/store/useAppStore'
 import { useGeolocation } from '~/hooks/useGeolocation'
 import { ErrorBoundary } from '~/components/ErrorBoundary'
 import { ErrorNotification } from '~/components/ui/ErrorNotification'
@@ -23,8 +23,13 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
   const theme = useAppStore((s) => s.theme)
   const mode = useAppStore((s) => s.mode)
   const onboardingComplete = useAppStore((s) => s.onboardingComplete)
+  const hasHydrated = useAppStore((s) => s.hasHydrated)
 
   useGeolocation()
+
+  useEffect(() => {
+    hydrateAppStore()
+  }, [])
 
   useEffect(() => {
     if (typeof document === 'undefined') return
@@ -36,7 +41,7 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
       <div className="min-h-screen min-w-0 bg-base-200 font-prose text-base-content">
         <SkipToContent />
         <ErrorNotification />
-        {!onboardingComplete && <OnboardingFlow />}
+        {hasHydrated && !onboardingComplete && <OnboardingFlow />}
 
         <AppBar />
         <StatusBar />

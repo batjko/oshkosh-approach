@@ -2,13 +2,12 @@ import { useState, useEffect } from 'react'
 import { MdWifiOff } from 'react-icons/md'
 
 export const OfflineIndicator = () => {
-  const [isOnline, setIsOnline] = useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true
-  )
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
+    setIsOnline(navigator.onLine)
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)

@@ -15,12 +15,11 @@ import {
 import { useAppStore } from '~/store/useAppStore'
 
 const useOnline = () => {
-  const [online, setOnline] = useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true
-  )
+  const [online, setOnline] = useState(true)
   useEffect(() => {
     const on = () => setOnline(true)
     const off = () => setOnline(false)
+    setOnline(navigator.onLine)
     window.addEventListener('online', on)
     window.addEventListener('offline', off)
     return () => {
