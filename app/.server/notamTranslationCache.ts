@@ -38,8 +38,9 @@ const hashJson = (value: unknown): string =>
 export const buildNotamTranslationCacheKey = (
   identity: NotamTranslationCacheIdentity
 ) => {
+  const id = normalize(identity.id)
   const stableIdentity = {
-    id: normalize(identity.id),
+    id,
     number: normalize(identity.number),
     type: normalize(identity.type),
     icaoLocation: normalize(identity.icaoLocation),
@@ -51,7 +52,7 @@ export const buildNotamTranslationCacheKey = (
   }
 
   return {
-    key: hashJson(stableIdentity),
+    key: hashJson({ id }),
     sourceHash: hashJson({
       id: stableIdentity.id,
       number: stableIdentity.number,
@@ -92,13 +93,12 @@ const isCacheRecord = <T>(
 }
 
 export const readNotamTranslationCache = async <T>(
-  key: string,
-  sourceHash: string
+  key: string
 ): Promise<T | null> => {
   try {
     const raw = await readFile(cachePath(key), 'utf8')
     const parsed = JSON.parse(raw) as unknown
-    if (!isCacheRecord<T>(parsed) || parsed.sourceHash !== sourceHash) return null
+    if (!isCacheRecord<T>(parsed)) return null
 
     const createdMs = Date.parse(parsed.createdAt)
     if (

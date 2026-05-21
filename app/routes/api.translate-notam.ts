@@ -166,7 +166,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       )
     }
 
-    const result = await requestNotamTranslation(body)
+    const result = await requestNotamTranslation(body, requestKey(request))
     const httpStatus = result.status === 'invalid' ? 400 : 200
     return json(result, { status: httpStatus, headers: NO_STORE_HEADERS })
   } catch {

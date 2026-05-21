@@ -11,21 +11,35 @@ interface ApproachMapProps {
   className?: string
 }
 
-const railroadRoute: LatLng[] = [
-  waypointById('vprip')!.position,
+type LeafletModule = typeof import('leaflet')
+type LeafletModuleWithDefault = LeafletModule & { default?: LeafletModule }
+
+const positionFor = (id: string): LatLng | null =>
+  waypointById(id)?.position ?? null
+
+const definedPositions = (positions: Array<LatLng | null>): LatLng[] =>
+  positions.filter((position): position is LatLng => position !== null)
+
+const resolveLeafletModule = (leafletModule: LeafletModule): LeafletModule => {
+  const moduleWithDefault = leafletModule as LeafletModuleWithDefault
+  return moduleWithDefault.default ?? leafletModule
+}
+
+const railroadRoute: LatLng[] = definedPositions([
+  positionFor('vprip'),
   [43.835, -88.78],
   [43.82, -88.74],
   [43.8, -88.68],
   [43.785, -88.62],
-  waypointById('vpfis')!.position
-]
+  positionFor('vpfis')
+])
 
-const finalApproachRoute: LatLng[] = [
-  waypointById('vpfis')!.position,
+const finalApproachRoute: LatLng[] = definedPositions([
+  positionFor('vpfis'),
   [43.82, -88.56],
   [43.9, -88.558],
-  waypointById('kosh')!.position
-]
+  positionFor('kosh')
+])
 
 const phaseFocusWaypointId = (phase: PhaseId): string | null => {
   switch (phase) {
@@ -64,12 +78,16 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
           import('leaflet')
         ])
         if (cancelled) return
-        delete (leaflet.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl
-        leaflet.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
-        })
+        const leafletInstance = resolveLeafletModule(leaflet)
+        const defaultIcon = leafletInstance.Icon.Default
+        if (defaultIcon) {
+          delete (defaultIcon.prototype as { _getIconUrl?: unknown })._getIconUrl
+          defaultIcon.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+          })
+        }
         setComponents(reactLeaflet)
       } catch (err) {
         console.error('Failed to load map:', err)
@@ -86,7 +104,8 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
   const focusWaypoint = focusId ? waypointById(focusId) : null
   const center: LatLng =
     (location ? [location.lat, location.lng] : focusWaypoint?.position) ??
-    waypointById('kosh')!.position
+    positionFor('kosh') ??
+    waypoints[0].position
 
   if (!components) {
     return (
@@ -113,7 +132,9 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
 
   const { MapContainer, TileLayer, Marker, Popup, Polyline, Circle } = components
   const phase = phaseById(currentPhase)
-  const coarsePointer = window.matchMedia('(pointer: coarse)').matches
+  const coarsePointer =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse)').matches
 
   return (
     <div className={`relative h-full w-full ${className}`}>
@@ -129,14 +150,18 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        <Polyline
-          positions={railroadRoute}
-          pathOptions={{ color: '#7a5a2c', weight: 3, dashArray: '10, 5' }}
-        />
-        <Polyline
-          positions={finalApproachRoute}
-          pathOptions={{ color: '#c46a16', weight: 4 }}
-        />
+        {railroadRoute.length > 1 && (
+          <Polyline
+            positions={railroadRoute}
+            pathOptions={{ color: '#7a5a2c', weight: 3, dashArray: '10, 5' }}
+          />
+        )}
+        {finalApproachRoute.length > 1 && (
+          <Polyline
+            positions={finalApproachRoute}
+            pathOptions={{ color: '#c46a16', weight: 4 }}
+          />
+        )}
         {waypoints.map((wp) => (
           <Marker key={wp.id} position={wp.position}>
             <Popup>

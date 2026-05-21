@@ -1,4 +1,5 @@
 import { useEffect, useState, type ComponentType } from 'react'
+import { ErrorBoundary } from '~/components/ErrorBoundary'
 import { MapFallback } from '~/components/map/MapFallback'
 import { useAppStore } from '~/store/useAppStore'
 
@@ -36,7 +37,9 @@ export const MapSection = ({
   return (
     <div className={`overflow-hidden rounded-cockpit border border-base-300 bg-base-100 ${heightClass}`}>
       {enableMap && mounted && ApproachMap ? (
-        <ApproachMap className="h-full w-full" />
+        <ErrorBoundary fallback={<MapFallback className="h-full w-full" />}>
+          <ApproachMap className="h-full w-full" />
+        </ErrorBoundary>
       ) : (
         <MapFallback className="h-full w-full" />
       )}

@@ -1,5 +1,9 @@
 import { serverLogger } from './logger'
 import {
+  getActiveNotamTranslation,
+  storeActiveNotamTranslation
+} from './notamCache'
+import {
   buildNotamTranslationCacheKey,
   readNotamTranslationCache,
   writeNotamTranslationCache,
@@ -9,6 +13,7 @@ import {
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const PROMPT_SCHEMA_VERSION = 'notam-translation-v2'
 const DEFAULT_TIMEOUT_MS = 10_000
+const MAX_TIMEOUT_MS = 15_000
 const MAX_NOTAM_TEXT_LENGTH = 5_000
 const MAX_FIELD_LENGTH = 600
 const MAX_ARRAY_ITEMS = 5
@@ -73,14 +78,80 @@ const completedJobs = new Map<
   string,
   { result: NotamTranslationResult; expiresAt: number }
 >()
+interface ClientTranslationQueue {
+  active: number
+  queue: Array<() => void>
+  lastUsedAt: number
+}
+
+const clientTranslationQueues = new Map<string, ClientTranslationQueue>()
 const PENDING_POLL_MS = 6_000
 const FAILED_JOB_TTL_MS = 5_000
 const MAX_COMPLETED_JOBS = 200
+const DEFAULT_MAX_CLIENT_TRANSLATIONS = 2
+const CLIENT_QUEUE_IDLE_TTL_MS = 5 * 60_000
 
 const readTimeoutMs = (): number => {
   const raw = Number(process.env.OPENROUTER_NOTAM_TIMEOUT_MS)
-  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_TIMEOUT_MS
+  return Number.isFinite(raw) && raw > 0
+    ? Math.min(raw, MAX_TIMEOUT_MS)
+    : DEFAULT_TIMEOUT_MS
 }
+
+const readMaxClientTranslations = (): number => {
+  const raw = Number(process.env.OPENROUTER_NOTAM_MAX_CLIENT_CONCURRENCY)
+  return Number.isFinite(raw) && raw > 0
+    ? Math.floor(raw)
+    : DEFAULT_MAX_CLIENT_TRANSLATIONS
+}
+
+const pruneClientTranslationQueues = (): void => {
+  const now = Date.now()
+  for (const [key, queue] of clientTranslationQueues) {
+    if (
+      queue.active === 0 &&
+      queue.queue.length === 0 &&
+      now - queue.lastUsedAt > CLIENT_QUEUE_IDLE_TTL_MS
+    ) {
+      clientTranslationQueues.delete(key)
+    }
+  }
+}
+
+const enqueueClientTranslation = async <T,>(
+  clientKey: string,
+  task: () => Promise<T>
+): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    pruneClientTranslationQueues()
+    const key = clientKey.trim() || 'unknown'
+    const limit = readMaxClientTranslations()
+    const queue =
+      clientTranslationQueues.get(key) ??
+      { active: 0, queue: [], lastUsedAt: Date.now() }
+
+    clientTranslationQueues.set(key, queue)
+
+    const run = () => {
+      queue.active += 1
+      queue.lastUsedAt = Date.now()
+      task()
+        .then(resolve)
+        .catch(reject)
+        .finally(() => {
+          queue.active -= 1
+          queue.lastUsedAt = Date.now()
+          queue.queue.shift()?.()
+        })
+    }
+
+    if (queue.active < limit) {
+      run()
+      return
+    }
+
+    queue.queue.push(run)
+  })
 
 const fetchWithHeaderTimeout = async (
   url: string,
@@ -419,6 +490,10 @@ const performTranslation = async (
           model: modelId,
           messages: buildMessages(notam),
           temperature: 0.2,
+          reasoning: {
+            effort: 'low',
+            exclude: true
+          },
           response_format: {
             type: 'json_schema',
             json_schema: {
@@ -471,6 +546,7 @@ const performTranslation = async (
         promptSchemaVersion: PROMPT_SCHEMA_VERSION,
         value: translation
       })
+      storeActiveNotamTranslation(notam, translation)
 
       serverLogger.info('notam.translation.success', {
         cacheKey: key,
@@ -511,12 +587,12 @@ export const translateNotam = async (
 
   const identity = buildCacheIdentity(notam, modelId)
   const { key, sourceHash } = buildNotamTranslationCacheKey(identity)
-  const cached = await readNotamTranslationCache<NotamTranslationValue>(
-    key,
-    sourceHash
-  )
+  const cached =
+    getActiveNotamTranslation(notam) ??
+    (await readNotamTranslationCache<NotamTranslationValue>(key))
 
   if (cached) {
+    storeActiveNotamTranslation(notam, cached)
     serverLogger.debug('notam.translation.cache.hit', {
       cacheKey: key,
       modelId
@@ -546,7 +622,8 @@ export const translateNotam = async (
 }
 
 export const requestNotamTranslation = async (
-  notam: NotamTranslationRequest
+  notam: NotamTranslationRequest,
+  clientKey = 'unknown'
 ): Promise<NotamTranslationResult> => {
   const requestError = validateRequest(notam)
   if (requestError) return { status: 'invalid', error: requestError }
@@ -559,12 +636,12 @@ export const requestNotamTranslation = async (
   const identity = buildCacheIdentity(notam, modelId)
   const { key, sourceHash } = buildNotamTranslationCacheKey(identity)
   pruneCompletedJobs()
-  const cached = await readNotamTranslationCache<NotamTranslationValue>(
-    key,
-    sourceHash
-  )
+  const cached =
+    getActiveNotamTranslation(notam) ??
+    (await readNotamTranslationCache<NotamTranslationValue>(key))
 
   if (cached) {
+    storeActiveNotamTranslation(notam, cached)
     return {
       status: 'ready',
       cacheKey: key,
@@ -584,7 +661,9 @@ export const requestNotamTranslation = async (
     return { status: 'pending', cacheKey: key, retryAfterMs: PENDING_POLL_MS }
   }
 
-  const promise = performTranslation(notam, key, sourceHash, modelId, apiKey)
+  const promise = enqueueClientTranslation(clientKey, () =>
+    performTranslation(notam, key, sourceHash, modelId, apiKey)
+  )
     .then((result) => {
       if (result.status !== 'ready') {
         completedJobs.set(key, {
@@ -613,6 +692,9 @@ export const getCachedNotamTranslation = async (
   if (!modelId) return null
 
   const identity = buildCacheIdentity(notam, modelId)
-  const { key, sourceHash } = buildNotamTranslationCacheKey(identity)
-  return readNotamTranslationCache<NotamTranslationValue>(key, sourceHash)
+  const { key } = buildNotamTranslationCacheKey(identity)
+  return (
+    getActiveNotamTranslation(notam) ??
+    readNotamTranslationCache<NotamTranslationValue>(key)
+  )
 }

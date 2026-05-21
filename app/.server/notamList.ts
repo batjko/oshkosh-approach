@@ -5,6 +5,7 @@ import type {
 } from './notamSearch.types'
 import { keywordToType, type NotamType } from '../utils/notamTypes'
 import { serverLogger } from './logger'
+import { reconcileActiveNotamCache } from './notamCache'
 import { signNotamTranslationRequest } from './notamTranslationSignature'
 import {
   getCachedNotamTranslation,
@@ -20,9 +21,9 @@ dns.setDefaultResultOrder('ipv4first')
  * Public FAA NOTAM Search XHR endpoint. Same one the official FAA NOTAM
  * Search UI calls. Returns JSON, no API key required.
  *
- * IMPORTANT: do not cache results in-process. Each loader call must hit
- * fresh per the product requirement — pilots reload to refresh, NOTAMs
- * are authoritative.
+ * Each loader call still hits the FAA, then reconciles the active result
+ * into the process-local NOTAM cache so translations can be reused across
+ * sessions while the FAA remains authoritative.
  */
 const FAA_NOTAM_SEARCH_URL = 'https://notams.aim.faa.gov/notamSearch/search'
 const DEFAULT_ICAO = 'KOSH'
@@ -218,8 +219,8 @@ const buildSearchBody = (icao: string): string =>
 
 /**
  * Fetch live KOSH NOTAMs from the FAA's public NOTAM Search service.
- * Always hits the network. Never caches. Returns a typed result with a
- * `fetchedAt` timestamp the UI can display.
+ * Always hits the network, then reconciles the active in-process cache.
+ * Returns a typed result with a `fetchedAt` timestamp the UI can display.
  */
 export async function getKoshNotams(
   icao: string = DEFAULT_ICAO
@@ -250,11 +251,18 @@ export async function getKoshNotams(
     }
 
     const json = (await response.json()) as RawFaaNotamSearchResponse
-    const notamList = await attachCachedTranslations(transformNotamList(json))
+    const activeNotams = await attachCachedTranslations(transformNotamList(json))
+    const {
+      notams: notamList,
+      activeCount,
+      prunedCount
+    } = reconcileActiveNotamCache(activeNotams)
     const elapsedMs = Date.now() - startedAt
     serverLogger.info('notam.fetch.success', {
       icao,
       count: notamList.length,
+      cachedActiveCount: activeCount,
+      prunedCount,
       rawCount: Array.isArray(json?.notamList) ? json.notamList.length : 0,
       elapsedMs
     })
