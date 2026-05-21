@@ -49,6 +49,41 @@ body {
   .target-touch {
     @apply min-h-[3rem] min-w-[3rem];
   }
+  .feedback-survey .ph-survey,
+  .feedback-survey .survey-form,
+  .feedback-survey .survey-box,
+  .feedback-survey .question-container,
+  .feedback-survey .question-header {
+    @apply w-full;
+  }
+  .feedback-survey .survey-question {
+    @apply mb-2 block text-sm font-medium leading-snug text-base-content;
+  }
+  .feedback-survey textarea,
+  .feedback-survey input,
+  .feedback-survey select {
+    @apply block min-h-28 w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-base text-base-content shadow-inner outline-none;
+  }
+  .feedback-survey textarea:focus,
+  .feedback-survey input:focus,
+  .feedback-survey select:focus {
+    @apply border-primary ring-2 ring-primary/20;
+  }
+  .feedback-survey textarea {
+    @apply resize-y;
+  }
+  .feedback-survey .bottom-section {
+    @apply mt-3 flex flex-col items-start gap-2;
+  }
+  .feedback-survey .form-submit {
+    @apply inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-content;
+  }
+  .feedback-survey .form-submit:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  .feedback-survey .footer-branding {
+    @apply block text-xs leading-none text-base-content/60;
+  }
 }
 
 @layer utilities {

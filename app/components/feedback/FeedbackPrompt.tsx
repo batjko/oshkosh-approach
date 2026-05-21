@@ -1,19 +1,25 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import posthogJs, {
-  DisplaySurveyType,
-  type Survey
-} from 'posthog-js'
 import { MdClose, MdFeedback } from 'react-icons/md'
 
 import { useAppStore } from '~/store/useAppStore'
+import { useAnalyticsReady, useOnline } from '~/components/feedback/feedbackPromptHooks'
+import {
+  cancelFeedbackSurvey,
+  displayFeedbackSurvey,
+  loadFeedbackSurvey
+} from '~/components/feedback/posthogFeedback'
 import { useNotificationCount } from '~/components/ui/ErrorNotification'
 
 const DEFAULT_DELAY_MS = 120_000
 const DISMISS_COOLDOWN_MS = 30 * 60_000
 const DISMISSED_UNTIL_KEY = 'osh-feedback-dismissed-until'
 const SURVEY_CONTAINER_ID = 'osh-feedback-survey-container'
+const SURVEY_RENDER_TIMEOUT_MS = 8_000
 
 type PromptState = 'hidden' | 'teaser' | 'survey'
+
+const hasUsableSurveyContent = (container: HTMLElement): boolean =>
+  container.querySelector('form, textarea, input, select, button, [role="button"]') !== null
 
 const readDelayMs = (): number => {
   const raw = (import.meta as unknown as { env?: Record<string, string | undefined> })
@@ -45,29 +51,6 @@ const dismissForCooldown = () => {
   }
 }
 
-const getActiveSurveys = (): Promise<Survey[]> =>
-  new Promise((resolve) => {
-    posthogJs.getActiveMatchingSurveys((surveys) => resolve(surveys), true)
-  })
-
-const useOnline = () => {
-  const [online, setOnline] = useState(true)
-
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    setOnline(navigator.onLine)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => {
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', off)
-    }
-  }, [])
-
-  return online
-}
-
 /**
  * Delayed, first-party wrapper around PostHog surveys. The SDK survey
  * extension is enabled only after the pilot explicitly opens feedback,
@@ -82,6 +65,7 @@ export const FeedbackPrompt = () => {
   const openSheet = useAppStore((s) => s.openSheet)
   const notificationCount = useNotificationCount()
   const online = useOnline()
+  const analyticsReady = useAnalyticsReady()
   const [state, setState] = useState<PromptState>('hidden')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -91,11 +75,12 @@ export const FeedbackPrompt = () => {
     () =>
       hasHydrated &&
       onboardingComplete &&
+      analyticsReady &&
       mode === 'pre-flight' &&
       online &&
       !openSheet &&
       notificationCount === 0,
-    [hasHydrated, mode, notificationCount, onboardingComplete, online, openSheet]
+    [analyticsReady, hasHydrated, mode, notificationCount, onboardingComplete, online, openSheet]
   )
 
   useEffect(() => {
@@ -114,20 +99,37 @@ export const FeedbackPrompt = () => {
     setState('hidden')
     setLoading(false)
     setMessage(null)
-    if (surveyId) posthogJs.cancelPendingSurvey(surveyId)
+    if (surveyId) cancelFeedbackSurvey(surveyId)
     setSurveyId(null)
   }, [eligible, state, surveyId])
 
   useEffect(() => {
     if (state !== 'survey' || !surveyId) return
 
-    posthogJs.displaySurvey(surveyId, {
-      displayType: DisplaySurveyType.Inline,
-      selector: `#${SURVEY_CONTAINER_ID}`,
-      ignoreConditions: false,
-      ignoreDelay: true,
-      properties: { surface: 'first_party_feedback_prompt' }
+    const container = document.getElementById(SURVEY_CONTAINER_ID)
+    if (!container) return
+
+    setMessage('Loading feedback form...')
+    const observer = new MutationObserver(() => {
+      if (!hasUsableSurveyContent(container)) return
+      setMessage(null)
+      observer.disconnect()
     })
+    observer.observe(container, { childList: true, subtree: true })
+
+    displayFeedbackSurvey(surveyId, `#${SURVEY_CONTAINER_ID}`)
+    const timeoutId = window.setTimeout(() => {
+      if (hasUsableSurveyContent(container)) return
+      observer.disconnect()
+      setMessage('Feedback could not load. Please try again.')
+      setSurveyId(null)
+      setState('teaser')
+    }, SURVEY_RENDER_TIMEOUT_MS)
+
+    return () => {
+      observer.disconnect()
+      window.clearTimeout(timeoutId)
+    }
   }, [state, surveyId])
 
   useEffect(() => {
@@ -137,7 +139,7 @@ export const FeedbackPrompt = () => {
 
   const close = () => {
     dismissForCooldown()
-    if (surveyId) posthogJs.cancelPendingSurvey(surveyId)
+    if (surveyId) cancelFeedbackSurvey(surveyId)
     setState('hidden')
     setLoading(false)
     setMessage(null)
@@ -183,8 +185,7 @@ export const FeedbackPrompt = () => {
     setMessage(null)
 
     try {
-      const surveys = await getActiveSurveys()
-      const survey = surveys.find((s) => s.type === 'popover' || s.type === 'api') ?? surveys[0]
+      const survey = await loadFeedbackSurvey()
       if (!survey) {
         setMessage('Feedback is not available right now.')
         setLoading(false)
@@ -203,8 +204,17 @@ export const FeedbackPrompt = () => {
 
   const shellClass =
     state === 'teaser'
-      ? 'fixed inset-x-3 bottom-3 z-[55] rounded-full border border-base-300 bg-base-100 p-1.5 shadow-cockpit tablet:inset-x-auto tablet:bottom-5 tablet:right-5 tablet:w-auto'
-      : 'fixed inset-x-3 bottom-3 z-[55] rounded-cockpit border border-base-300 bg-base-100 p-3 shadow-cockpit tablet:inset-x-auto tablet:bottom-5 tablet:right-5 tablet:w-[22rem]'
+      ? [
+          'fixed inset-x-3 bottom-3 z-[1100] max-w-[calc(100vw-1.5rem)]',
+          'rounded-full border border-base-300 bg-base-100 p-1.5 shadow-cockpit',
+          'tablet:inset-x-auto tablet:bottom-5 tablet:right-5 tablet:w-auto'
+        ].join(' ')
+      : [
+          'fixed inset-x-3 bottom-3 z-[1100] max-h-[min(82dvh,38rem)]',
+          'max-w-[calc(100vw-1.5rem)] rounded-cockpit border border-base-300',
+          'bg-base-100 p-3 shadow-cockpit',
+          'tablet:inset-x-auto tablet:bottom-5 tablet:right-5 tablet:w-[24rem]'
+        ].join(' ')
 
   return (
     <div
@@ -221,12 +231,14 @@ export const FeedbackPrompt = () => {
         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
           <MdFeedback className="h-5 w-5" />
         </div>
-        <div className={`min-w-0 flex-1 ${state === 'teaser' ? 'sr-only tablet:not-sr-only tablet:px-1' : ''}`}>
+        <div className={`min-w-0 flex-1 ${state === 'teaser' ? 'px-1' : ''}`}>
           <h2 id={titleId} className="text-sm font-semibold leading-tight">
             {state === 'teaser' ? 'Share feedback' : 'Help improve this cockpit view'}
           </h2>
           {message && (
-            <p className="mt-2 text-xs leading-snug text-warning">{message}</p>
+            <p className="mt-2 text-xs leading-snug text-warning" role="status">
+              {message}
+            </p>
           )}
         </div>
         {state === 'teaser' && (
@@ -252,7 +264,7 @@ export const FeedbackPrompt = () => {
       {state === 'survey' && (
         <div
           id={SURVEY_CONTAINER_ID}
-          className="mt-3 max-h-[min(60dvh,32rem)] overflow-y-auto overscroll-contain"
+          className="feedback-survey mt-3 max-h-[min(58dvh,30rem)] overflow-y-auto overscroll-contain"
         />
       )}
     </div>

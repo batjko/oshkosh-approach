@@ -110,6 +110,8 @@ export const initAnalytics = (): void => {
 
 export const isAnalyticsReady = (): boolean => initialized
 
+export const isAnalyticsDisabled = (): boolean => disabled
+
 /**
  * Typed product event catalog. New events should be added here so that
  * call sites stay type-safe and the property surface remains auditable.
