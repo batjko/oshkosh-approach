@@ -13,7 +13,8 @@ export const aircraftProfiles: AircraftProfile[] = [
     recommendedSpeedAlt: { ias_kt: 90, altitude_ft_msl: 1800, label: 'Standard' },
     notes: [
       'Maintain 0.5 NM in-trail behind the aircraft you are following.',
-      'No S-turning to slow down. Break off and restart at the transition start.'
+      'No S-turning to slow down. Break off and restart at the transition start.',
+      'If unable to comfortably operate at 90 kt, use maximum cruising speed; ATC recommends arriving at Fisk 7:00-7:30 AM if practicable.'
     ]
   },
   {
@@ -31,9 +32,13 @@ export const aircraftProfiles: AircraftProfile[] = [
     arrivalRoute: 'fond-du-lac',
     recommendedSpeedAlt: { ias_kt: 150, altitude_ft_msl: 1800, label: 'Warbird' },
     notes: [
+      'FLD temporary tower operates Sat Jul 18-Sun Jul 26, 7:00 AM-8:30 PM CDT, closing 2:00 PM Sun Jul 26.',
       'Avoid FLD airspace at/below 3,300 MSL within 4 NM.',
       'Descend to 2,800 MSL when 4 NM N of FLD, then direct Warbird Island.',
       'Report "city of Fond du Lac" then "Warbird Island" on 126.6 (RWY 36L/R) or 118.5.',
+      'When cleared at Warbird Island, reduce to 150 kt or less and descend to 1,800 MSL (2,300 MSL for overhead).',
+      'Overhead approaches may be requested to RWY 36L/R or RWY 27; break altitude 2,300 MSL.',
+      'Warbird helicopters wishing to land in the warbird area require advanced approval; if needed, land short of OSH and call Tower 920-424-8002.',
       'Heavy aircraft (>12,500 lb) advise on initial contact.',
       'Avoid the VFR Fisk arrival area SW of OSH at all costs.'
     ]
@@ -45,9 +50,13 @@ export const aircraftProfiles: AircraftProfile[] = [
     arrivalRoute: 'transient-helicopter',
     recommendedSpeedAlt: { ias_kt: 80, altitude_ft_msl: 1300, label: 'Helicopter' },
     notes: [
+      'App speed is a planning default; the 2026 Notice specifies 1,300 MSL but no helicopter speed.',
       'Stay south of RWY 9/27. Monitor 118.5.',
       'Helipad at Pioneer Airport (turf, white box around HELI).',
+      'Transient helicopter flights are limited to arrivals and departures; no local flights.',
       'No arrivals/departures when OSH is IFR or closed (incl. airshow).',
+      'Depart with Departure ATIS 121.75, then monitor Tower 118.5.',
+      'Depart north of the AirVenture Museum, remain well south of the RWY 9/27 extended centerline, and remain south of Waukau Ave at 1,300 MSL until clear west.',
       'Hazards: ultralights <=1,100 MSL, EAA helicopter ops, zeppelin mooring.'
     ]
   },
@@ -58,11 +67,17 @@ export const aircraftProfiles: AircraftProfile[] = [
     arrivalRoute: 'ultralight',
     recommendedSpeedAlt: { ias_kt: 55, altitude_ft_msl: 1100, label: 'Ultralight' },
     notes: [
+      'App speed/altitude is a planning default; the 2026 Notice does not publish an ultralight speed/altitude pair.',
+      'Procedure hours: Jul 18-19 7:00 AM-8:00 PM; Jul 20-26 7:00 AM-2:15 PM and 6:30-8:00 PM CDT.',
       'Approval phone: 920-230-7759.',
+      'Helicopters and gyroplanes should arrive Noon-2:00 PM unless arranged; large helicopters use the transient helicopter procedure.',
       'Entry: Highway Z and Highway 26, ~5 NM SW of OSH.',
       'Arrival ATIS 125.9, then advisory 123.75.',
       'Pattern clockwise for SE landings, counter-clockwise for NW.',
-      'Stay clear of OSH RWYs 18L/R and 36L/R.'
+      'Stay clear of OSH RWYs 18L/R and 36L/R.',
+      'Runway closure is marked with a yellow X; be prepared to divert.',
+      'Departing traffic has right of way; obtain Departure ATIS 121.75 before departure if radio equipped.',
+      'Do not fly over people, houses, livestock, parked aircraft, etc. lower than 300 ft AGL.'
     ]
   },
   {
@@ -72,10 +87,15 @@ export const aircraftProfiles: AircraftProfile[] = [
     arrivalRoute: 'seaplane',
     recommendedSpeedAlt: { ias_kt: 80, altitude_ft_msl: 1350, label: 'Seaplane' },
     notes: [
+      'Operational Sat Jul 18-Sun Jul 26; Mon-Sat 8:00 AM-6:00 PM, Sun 8:00 AM-5:00 PM.',
+      'App speed is a planning default; the 2026 Notice specifies <=1,350 MSL but no seaplane speed.',
       'Pattern over water, <=1,350 MSL, left turns. Freq 123.3.',
       'Do NOT use the Fisk arrival. Do NOT contact OSH Tower.',
       'Rough water alternate: Warbird Island. Phone 920-230-7829.',
-      'Closed during airshows / TFRs.'
+      'Helicopter operations require prior approval via 920-230-7829.',
+      'Pilot briefings are mandatory before local flights or departures.',
+      'No takeoffs or landings in the lagoon; no takeoffs directly over shoreline or crowds.',
+      'During OSH airshows, land outside the Airshow Demonstration Area and taxi to the Seaplane Base; no operations during TFRs.'
     ]
   },
   {

@@ -1,5 +1,16 @@
 import { MdInfoOutline, MdWarningAmber } from 'react-icons/md'
-import { holds, holdSpeedKt, holdAltitudeFtMsl, type PhaseDefinition } from '~/content/oshkosh'
+import {
+  departureRunways,
+  departureSafetyNotes,
+  holds,
+  holdAltitudeFtMsl,
+  holdGeneralGuidance,
+  holdHighAltitudeFtMsl,
+  holdHighSpeedKt,
+  holdSaturationGuidance,
+  holdSpeedKt,
+  type PhaseDefinition
+} from '~/content/oshkosh'
 import { Checklist } from '~/components/checklist/Checklist'
 import { SourceBadge } from '~/components/sources/SourceBadge'
 
@@ -19,9 +30,12 @@ const HoldsSubBlock = () => (
     </h3>
     <p className="mt-1 text-xs text-base-content/70">
       ATC may instruct a hold over a published landmark when the arrival
-      saturates. Standard hold parameters: {holdSpeedKt} kt at {holdAltitudeFtMsl.toLocaleString()}{' '}
-      ft MSL unless otherwise assigned.
+      saturates. Hold at {holdSpeedKt} kt, or maximum cruise if below {holdSpeedKt} kt,
+      and {holdAltitudeFtMsl.toLocaleString()} ft MSL. If unable, use {holdHighSpeedKt} kt at{' '}
+      {holdHighAltitudeFtMsl.toLocaleString()} ft MSL.
     </p>
+    <p className="mt-2 text-xs text-base-content/70">{holdGeneralGuidance}</p>
+    <p className="mt-1 text-xs text-base-content/70">{holdSaturationGuidance}</p>
     <ul className="mt-2 grid gap-2 sm:grid-cols-2">
       {holds.map((h) => (
         <li
@@ -37,6 +51,43 @@ const HoldsSubBlock = () => (
             <strong className="text-base-content/80">Exit:</strong> {h.exit}
           </div>
         </li>
+      ))}
+    </ul>
+  </section>
+)
+
+const DepartureSubBlock = () => (
+  <section
+    aria-label="Departure runways"
+    className="rounded-cockpit border border-base-300 bg-base-100 p-3"
+  >
+    <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+      Departure Runways
+    </h3>
+    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+      {departureRunways.map((r) => (
+        <li
+          key={r.id}
+          className="rounded-cockpit bg-base-200 p-2.5 text-xs"
+        >
+          <div className="font-semibold text-base-content">{r.label}</div>
+          <div className="mt-0.5 text-base-content/70">
+            {r.remainingFt.toLocaleString()} ft remaining
+          </div>
+          <div className="mt-1 font-cockpit text-[11px] text-base-content/70">
+            Monitor {r.monitorFreq}
+          </div>
+          {r.notes?.map((note) => (
+            <div key={note} className="mt-1 text-[11px] text-base-content/60">
+              {note}
+            </div>
+          ))}
+        </li>
+      ))}
+    </ul>
+    <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-base-content/70">
+      {departureSafetyNotes.map((note) => (
+        <li key={note}>{note}</li>
       ))}
     </ul>
   </section>
@@ -93,6 +144,7 @@ export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
       )}
 
       {showHolds && <HoldsSubBlock />}
+      {phase.id === 'depart' && <DepartureSubBlock />}
     </div>
 
     <aside className="space-y-4 xl:sticky xl:top-36">

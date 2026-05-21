@@ -15,8 +15,7 @@ export const arrivalSigns: ParkingSign[] = [
   { code: 'FBO', meaning: 'Basler FBO (hard surface, fueling)', category: 'arrival' },
   { code: 'SP', meaning: 'Seaplane / Amphibian', category: 'arrival' },
   { code: 'IAC', meaning: 'International Aerobatic Club', category: 'arrival' },
-  { code: 'EXP', meaning: 'Camp Scholler Express', category: 'arrival' },
-  { code: 'NORDO', meaning: 'No-radio arrival (vintage only)', category: 'arrival' }
+  { code: 'EXP', meaning: 'Camp Scholler Express', category: 'arrival' }
 ]
 
 export const departureSigns: ParkingSign[] = [

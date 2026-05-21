@@ -6,7 +6,7 @@ export const AlternatesSheet = () => (
   <Sheet
     id="alternates"
     title="Alternate airports"
-    description="Pre-brief these. Plan fuel for one-hour holding plus go-arounds plus an alternate."
+    description="Pre-brief these. Plan fuel for holding, go-arounds, and an alternate; update VFR flight-plan destination if diverting."
   >
     <ul className="space-y-3">
       {alternates.map((alt) => (

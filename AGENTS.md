@@ -327,7 +327,7 @@ changes belong in PostHog *events* (analytics), not logs.
 - **Heroku auto-deploys** on `git push origin master`. There is no preview environment. Validate locally first.
 - **PostHog is initialised in `app/utils/analytics.ts` via `app/provider.tsx`** — `entry.client.tsx` is a vanilla Remix hydration entry. Project key/host default to hardcoded EU values but are overridable via `VITE_PUBLIC_POSTHOG_TOKEN` / `VITE_PUBLIC_POSTHOG_HOST`. Init is post-hydration to avoid SSR mismatches; `<PostHogProvider>` wraps from first paint so the subtree is not remounted.
 - **App analytics events live in `app/utils/analytics.ts` (`AppEventMap` / `trackAppEvent`)**. Capture is mostly centralised inside `useAppStore` actions (phase, mode, sheet, GPS, theme, profile, runway, onboarding, section). NOTAM totals are summarised by priority via `countNotamsByPriority` — never send raw NOTAM text. Do not capture geolocation, aircraft identity, or call sign.
-- **The 2026 FAA Notice publishes mid-May 2026**. Until then, `app/content/oshkosh/notice.ts` runs in `'baseline'` mode using the 2025 Notice. Flip to `'released'` only after a full content review against the 2026 Notice.
+- **The 2026 FAA/EAA AirVenture Notice is released and embedded**. Keep `app/content/oshkosh/notice.ts` in `'released'` mode only while the content remains reviewed against the official 2026 Notice.
 
 ---
 

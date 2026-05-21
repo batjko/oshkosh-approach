@@ -43,7 +43,7 @@ const buildLlmsFullBody = (): string => {
 
   lines.push('## Notice metadata')
   lines.push('')
-  lines.push(`- Baseline year: ${notice.baselineYear}`)
+  lines.push(`- Embedded Notice year: ${notice.baselineYear}`)
   lines.push(`- Required year for flight-day use: ${notice.requiredYear}`)
   lines.push(`- Status: ${notice.status}`)
   if (notice.publishedAt) lines.push(`- Published: ${notice.publishedAt}`)
@@ -55,7 +55,7 @@ const buildLlmsFullBody = (): string => {
   lines.push('## Event')
   lines.push('')
   lines.push(`- Name: EAA AirVenture Oshkosh`)
-  lines.push(`- Dates: ${event.startDate} to ${event.endDate}`)
+  lines.push(`- Special flight procedures: ${event.procedureEffectiveWindow}`)
   lines.push(
     `- Airport: ${event.airportName} (${event.airportIcao}), ` +
     `elevation ${event.fieldElevationFt} ft MSL`

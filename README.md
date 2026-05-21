@@ -186,12 +186,10 @@ divert triggers, waypoints — lives in
 [`app/content/oshkosh/`](./app/content/oshkosh) as typed,
 import-time-validated data.
 
-The 2026 FAA Notice is expected mid-May 2026. Until then,
-`app/content/oshkosh/notice.ts` exposes `notice.status === 'baseline'`
-and the procedural data is sourced from the **2025 Notice** (per the
-`OSH26_pilot_arrival_research.md` package). Flip to `'released'` and
-update procedural constants only after a full review against the
-published 2026 Notice.
+`app/content/oshkosh/notice.ts` exposes the currently embedded Notice
+year and release status. The app is loaded with the released **2026
+FAA/EAA AirVenture Notice** after a source-backed review of procedural
+constants.
 
 Every fact is tied back to a citation in
 [`app/content/oshkosh/sources.ts`](./app/content/oshkosh/sources.ts) —

@@ -13,7 +13,7 @@ export const phases: PhaseDefinition[] = [
     summary: 'Read the Notice. Ready charts, signs, and EFB. Review personal minimums.',
     briefing:
       'The FAA AirVenture Notice is the only authoritative source for arrival procedures. ' +
-      'Read it cover-to-cover. Confirm your EFB has the FISK arrival loaded (Garmin DB cycle 2507+). ' +
+      'Read it cover-to-cover. Confirm your EFB has the FISK arrival loaded in the current database. ' +
       'Print physical arrival/parking signs - tablet signs are NOT accepted.',
     primaryActions: [
       { id: 'read-notice', text: 'Read current FAA AirVenture Notice cover-to-cover.', required: true },
@@ -21,19 +21,20 @@ export const phases: PhaseDefinition[] = [
       { id: 'verify-efb', text: 'Confirm EFB has FISK arrival in current database.' },
       { id: 'load-waypoints', text: 'Load VFR waypoints VPENV, VPPLK, VPGRN, VPRIP, VPFIS in GPS/EFB.' },
       { id: 'check-tfr', text: 'Check tfr.faa.gov for the AirVenture TFR and any en-route TFRs.' },
+      { id: 'check-moas', text: 'Check NOTAMs for large MOAs in west-central Wisconsin.' },
       { id: 'print-signs', text: 'Print arrival/parking signs from eaa.org/signs.', required: true }
     ],
     secondaryActions: [
       { id: 'fuel-plan', text: 'Plan fuel for 1+ hour holding plus go-arounds plus alternate.' },
-      { id: 'mass-arrivals', text: 'Check mass arrival schedule (Bonanza, Mooney, RV, etc.).' },
+      { id: 'large-formations', text: 'Check large formation arrival schedule; expect Fisk delays Sat Jul 18 and Sun Jul 19.' },
       { id: 'parking-status', text: 'Check eaa.org/aircraftparking for parking saturation.' },
       { id: 'brief-navigator', text: 'Brief right-seat / navigator on role split.' }
     ],
     warnings: [
       'Tablet-displayed parking signs are NOT accepted - print physical signs.',
-      'International pilots: TSA waiver requires >= 10 days advance.'
+      'Canadian EAB/basic/advanced ultralight pilots need FAA Special Flight Authorization before U.S. operations.'
     ],
-    sources: ['faa-2025-notice', 'eaa-tips', 'eaa-signs', 'osh26-research']
+    sources: ['faa-2026-notice', 'eaa-tips', 'eaa-signs', 'osh26-research']
   },
   {
     id: 'enroute',
@@ -51,11 +52,17 @@ export const phases: PhaseDefinition[] = [
       { id: 'lights-on', text: 'All exterior lights ON at 50 NM. Transponder ON.' },
       { id: 'fisk-120-7', text: 'Tune Fisk Approach 120.7 in COM1 approaching the transition.' }
     ],
+    secondaryActions: [
+      { id: 'chicago-flyway', text: 'If transiting Chicago, use the VFR Flyway Planning Chart.' },
+      { id: 'chicago-freqs', text: 'Chicago VFR services at/above 5,500: 128.57 north of ORD, 126.62 south of ORD.' },
+      { id: 'mdw-shoreline', text: 'Shoreline transit: monitor MDW ATIS 132.75 and remain below MDW Class C.' }
+    ],
     warnings: [
       'No VFR flight following within 70 NM of OSH.',
-      'Avoid Chicago Class B/C transit unless flight following requested early.'
+      'Chicago Class Bravo clearances for VFR aircraft are not available.',
+      'Use caution for west-side Chicago Class Bravo jet traffic at 4,000 ft and parachute activity near 8N2, RPJ, and 44C.'
     ],
-    sources: ['faa-2025-notice', 'osh26-research']
+    sources: ['faa-2026-notice', 'osh26-research']
   },
   {
     id: 'transition',
@@ -79,9 +86,10 @@ export const phases: PhaseDefinition[] = [
     warnings: [
       'No side-by-side except declared flights.',
       'No overtaking unless ATC-authorized.',
-      'No S-turning - if too fast, break off and restart at the transition start.'
+      'No S-turning - if too fast, break off and restart at the transition start.',
+      'Flights should advise Fisk on 120.7 as a flight of number and type when traffic permits.'
     ],
-    sources: ['faa-2025-notice', 'osh26-research']
+    sources: ['faa-2026-notice', 'osh26-research']
   },
   {
     id: 'ripon-to-fisk',
@@ -108,10 +116,10 @@ export const phases: PhaseDefinition[] = [
       { ias_kt: 135, altitude_ft_msl: 2300, label: 'High-performance' }
     ],
     warnings: [
-      'No verbal acknowledgement to ATC - rock wings if directed.',
+      'No verbal acknowledgement required; request clarification on frequency if needed.',
       'Cat 1/2 separation reduced under FAA waiver - expect VERY close traffic.'
     ],
-    sources: ['faa-2025-notice', 'osh26-research']
+    sources: ['faa-2026-notice', 'osh26-research']
   },
   {
     id: 'at-fisk',
@@ -128,10 +136,10 @@ export const phases: PhaseDefinition[] = [
       { id: 'switch-tower', text: 'Switch to assigned tower frequency only after the call.' }
     ],
     warnings: [
-      'Microwave tower ~1 NM east of Fisk, just south of Fisk Ave - stay NORTH of it.',
+      'For Fisk Ave, navigate close to the road on the south side while remaining NORTH of the microwave tower.',
       'Do not confuse Fisk Avenue with Highway 44.'
     ],
-    sources: ['faa-2025-notice', 'osh26-research']
+    sources: ['faa-2026-notice', 'osh26-research']
   },
   {
     id: 'inbound-runway',
@@ -152,7 +160,7 @@ export const phases: PhaseDefinition[] = [
       'Do not land before the relocated threshold (RWY 18R) without tower OK.',
       'Notify ATC IMMEDIATELY for go-around resequencing.'
     ],
-    sources: ['faa-2025-notice', 'osh26-research']
+    sources: ['faa-2026-notice', 'osh26-research']
   },
   {
     id: 'ground',
@@ -176,23 +184,32 @@ export const phases: PhaseDefinition[] = [
       'No bicycles/motorcycles on movement areas.',
       'Do not cross taxiways/runways on foot.'
     ],
-    sources: ['faa-2025-notice', 'eaa-aircraft-parking', 'eaa-signs']
+    sources: ['faa-2026-notice', 'eaa-aircraft-parking', 'eaa-signs']
   },
   {
     id: 'depart',
     order: 7,
     title: 'Departure',
     cockpitTitle: 'Depart',
-    summary: 'Departure ATIS 121.75, runway-specific monitor frequencies after takeoff.',
+    summary: 'Departure ATIS 121.75, runway-specific monitor frequencies, then published route after takeoff.',
     briefing:
       'Tune Departure ATIS 121.75. Use VFR/IFR sign on departure day. ' +
-      'After takeoff, switch to the runway-specific departure monitor frequency.',
+      'Do not start engines or move aircraft until the Departure ATIS says the airport is open. ' +
+      'Monitor the runway departure point controller frequency, then after takeoff fly the published departure route.',
     primaryActions: [
-      { id: 'departure-atis', text: 'Tune Departure ATIS 121.75.' },
+      { id: 'departure-atis', text: 'Tune Departure ATIS 121.75 before engine start.' },
       { id: 'departure-sign', text: 'Display VFR or IFR departure sign.' },
-      { id: 'monitor-freq', text: 'After takeoff, switch to the runway departure monitor freq.' }
+      { id: 'vfr-taxi', text: 'VFR: taxi toward assigned runway without calling Ground; follow EAA flagpersons.' },
+      { id: 'ifr-clearance', text: 'IFR: request Clearance Delivery 119.05 before engine start; stay there until told to contact Ground 132.3.' },
+      { id: 'ifr-taxi', text: 'IFR: taxi as instructed by Ground Control and EAA flagpersons.' },
+      { id: 'monitor-freq', text: 'Monitor the runway departure point controller frequency before takeoff.' }
     ],
-    sources: ['faa-2025-notice']
+    warnings: [
+      'Do not depart on RWYs 13/31 or 5/23; they are closed.',
+      'RWY 36L departures: turn right to heading 150 deg prior to the ATC Tower.',
+      'When OSH is IFR, taxiing is prohibited except for aircraft with an IFR clearance.'
+    ],
+    sources: ['faa-2026-notice']
   }
 ]
 

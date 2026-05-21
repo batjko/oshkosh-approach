@@ -9,8 +9,8 @@ export const divertTriggers: DivertTrigger[] = [
   },
   {
     id: 'holds-saturated',
-    trigger: 'Holding patterns saturated, ATC silent.',
-    action: 'Stay clear, make left turns over a ground point, monitor 120.7.',
+    trigger: 'Holding patterns observed or reported nearing capacity.',
+    action: 'Stay clear, proceed no further, make left turns over a ground point, monitor 120.7.',
     severity: 'caution'
   },
   {

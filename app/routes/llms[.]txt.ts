@@ -27,8 +27,8 @@ const buildLlmsBody = (): string => {
 
   /**
    * Resolve the current FAA Notice source from any year-specific key.
-   * Avoids brittle `sources['faa-2025-notice']` literals that would
-   * silently miss when the baseline rolls to 2026 and beyond.
+   * Avoids brittle year-specific source literals that would
+   * silently miss when the embedded Notice year changes.
    */
   const faa =
     Object.values(sources).find((s) => s.url === notice.baselineUrl) ??
@@ -61,7 +61,7 @@ const buildLlmsBody = (): string => {
   )
   lines.push('')
   lines.push(
-    `Currently embedded baseline: FAA ${notice.baselineYear} Notice. ` +
+    `Currently embedded Notice: FAA/EAA ${notice.baselineYear} AirVenture Notice. ` +
     `Required year for flight-day use: ${notice.requiredYear}. ` +
     `Status: ${notice.status}.`
   )
@@ -70,7 +70,7 @@ const buildLlmsBody = (): string => {
   lines.push('## Event facts')
   lines.push('')
   lines.push(`- Event: EAA AirVenture Oshkosh ${event.startDate.slice(0, 4)}`)
-  lines.push(`- Dates: ${event.startDate} to ${event.endDate}`)
+  lines.push(`- Special flight procedures: ${event.procedureEffectiveWindow}`)
   lines.push(
     `- Airport: ${event.airportName} (${event.airportIcao}), ` +
     `field elevation ${event.fieldElevationFt} ft MSL`

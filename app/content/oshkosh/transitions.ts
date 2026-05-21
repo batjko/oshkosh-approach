@@ -44,7 +44,7 @@ export const transitions: TransitionDefinition[] = [
     id: 'ripon',
     name: 'Ripon (default)',
     startWaypointId: 'vprip',
-    description: 'Default single starting point if no transition assigned. 15.5 NM SW.',
+    description: 'Default single starting point if no transition assigned. Ripon is about 15 NM SW of OSH.',
     whenAssigned: 'Always available unless ATC assigns another.',
     steps: [
       'Cross VPRIP at NE corner of Ripon.',

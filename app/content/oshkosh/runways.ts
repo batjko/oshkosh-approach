@@ -12,7 +12,8 @@ export const runways: RunwayDefinition[] = [
     ],
     rules: [
       'If aircraft <6,250 lb, exit to sod L or R when speed permits.',
-      'Do NOT turn back onto the runway.'
+      'Do NOT turn back onto the runway.',
+      'Use caution for hazards marked with cones and/or flags.'
     ]
   },
   {
@@ -28,7 +29,8 @@ export const runways: RunwayDefinition[] = [
     rules: [
       'Turn base BEFORE the shoreline (Lake Winnebago).',
       'Do not cross the shoreline unless cleared.',
-      'If <6,250 lb, exit to sod when speed permits.'
+      'If <6,250 lb, exit to sod left or right as directed when speed permits.',
+      'Do NOT turn back onto the runway; use caution for hazards marked with cones and/or flags.'
     ]
   },
   {
@@ -44,8 +46,10 @@ export const runways: RunwayDefinition[] = [
     rules: [
       'Turn base abeam the Blue Dot.',
       'If unable, immediate right turn SE for resequencing.',
+      'Do not continue past the Blue Dot unless advised by ATC.',
       'Relocated threshold beyond concrete edge - REIL + white lines.',
-      'Do not land short of the relocated threshold without tower OK.'
+      'Do not land short of the relocated threshold without tower OK.',
+      'Notify ATC immediately for a go-around or pattern break.'
     ]
   },
   {
@@ -59,6 +63,8 @@ export const runways: RunwayDefinition[] = [
       { id: 'purple-dot-36l', label: 'Purple dot', colorHex: '#a855f7', feetRemaining: 4950, shape: 'dot' }
     ],
     rules: [
+      'If going around, notify ATC immediately and do not continue past the ATC Tower.',
+      'If unable to notify ATC, turn right southeast prior to the ATC Tower for resequencing.',
       'Do NOT roll past the Blue Dot without tower authorization.'
     ]
   },
@@ -73,6 +79,8 @@ export const runways: RunwayDefinition[] = [
       { id: 'green-square-36r', label: 'Green square', colorHex: '#16a34a', feetRemaining: 4700, shape: 'square' }
     ],
     rules: [
+      'If going around, notify ATC immediately and do not continue past the ATC Tower.',
+      'If unable to notify ATC, turn right southeast prior to the ATC Tower for resequencing.',
       'Expect to land long, roll to end.',
       'Do not turn left unless advised.',
       'If turning left, hold short of 36L until cleared via 126.6 or pink-shirt.'

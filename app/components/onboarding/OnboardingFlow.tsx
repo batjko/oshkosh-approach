@@ -55,7 +55,7 @@ const StepHeading = ({
 
 /**
  * First-launch wizard. Three steps:
- *   1. Notice baseline + acknowledgement.
+ *   1. Current Notice acknowledgement.
  *   2. Aircraft profile selection.
  *   3. Ready summary + dive in.
  *
@@ -130,12 +130,12 @@ export const OnboardingFlow = () => {
                 icon={<MdShield className="h-6 w-6" />}
                 eyebrow="Step 1 of 3"
                 title="Read the official Notice"
-                description={`The FAA AirVenture Notice is the only authoritative source for arrival procedures. The 2026 Notice publishes mid-May; until then this app uses the ${notice.baselineYear} baseline.`}
+                description={`The FAA AirVenture Notice is the only authoritative source for arrival procedures. This app is loaded with the released ${notice.baselineYear} FAA/EAA AirVenture Notice.`}
               />
 
               <div className="rounded-cockpit bg-base-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-                  Notice baseline
+                  Notice status
                 </p>
                 <p className="mt-1 text-sm">{notice.notes}</p>
               </div>

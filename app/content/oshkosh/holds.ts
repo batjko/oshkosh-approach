@@ -29,5 +29,9 @@ export const holds: HoldDefinition[] = [
 
 export const holdSpeedKt = 90
 export const holdAltitudeFtMsl = 1800
+export const holdHighSpeedKt = 135
+export const holdHighAltitudeFtMsl = 2300
+export const holdGeneralGuidance =
+  'If holding is called while over Fisk, turn due westbound, remain single file north of the lakes, and return to the ATC-designated starting point.'
 export const holdSaturationGuidance =
-  'If holds saturated, stay clear, make left turns over a ground point, await ATC.'
+  'If holds are observed or reported nearing capacity, stay clear, proceed no further, make left turns over a ground point, and await ATC.'

@@ -5,11 +5,11 @@ import type { SourceRef } from './types'
  * traceable to one of these entries via `sources: ['source-id', ...]`.
  */
 export const sources: Record<string, SourceRef> = {
-  'faa-2025-notice': {
-    id: 'faa-2025-notice',
-    label: 'FAA 2025 AirVenture Notice (dom25014_sp) - current procedural baseline',
-    url: 'https://www.faa.gov/air_traffic/publications/domesticnotices/dom25014_sp.html',
-    publishedAt: '2025-05-20'
+  'faa-2026-notice': {
+    id: 'faa-2026-notice',
+    label: 'FAA/EAA 2026 AirVenture Notice',
+    url: 'https://www.eaa.org/~/media/2431455452d94e6fa97c7fdd8d2a864d.ashx',
+    publishedAt: '2026-05-21'
   },
   'eaa-notam-page': {
     id: 'eaa-notam-page',
@@ -48,7 +48,7 @@ export const sources: Record<string, SourceRef> = {
   },
   'faa-domestic-notices': {
     id: 'faa-domestic-notices',
-    label: 'FAA Domestic Notices index (2026 Notice publishes here)',
+    label: 'FAA Domestic Notices index',
     url: 'https://www.faa.gov/air_traffic/publications/domesticnotices/'
   },
   'eaa-seaplane': {

@@ -2,11 +2,8 @@
  * Canonical domain types for the EAA AirVenture Oshkosh arrival.
  *
  * Source of truth: the FAA AirVenture Notice ("Oshkosh NOTAM").
- * The 2026 Notice is expected mid-May 2026; until then the procedural data
- * is sourced from the 2025 Notice (dom25014_sp) per the OSH26 research package.
- *
  * Year-specific changes (dates, transitions, runway dot updates) MUST be
- * reviewed against the official 2026 Notice before flight-day use.
+ * reviewed against the official Notice before flight-day use.
  */
 
 export type LatLng = [lat: number, lng: number]
@@ -113,6 +110,14 @@ export interface RunwayDefinition {
   rules: string[]
 }
 
+export interface DepartureRunway {
+  id: string
+  label: string
+  remainingFt: number
+  monitorFreq: string
+  notes?: string[]
+}
+
 export interface AlternateAirport {
   id: string
   icao: string
@@ -146,7 +151,7 @@ export interface DivertTrigger {
 }
 
 export interface NoticeMetadata {
-  /** Year of the notice currently embedded as procedural baseline. */
+  /** Year of the Notice currently embedded as procedural guidance. */
   baselineYear: number
   /** Year users must confirm before in-flight mode is allowed. */
   requiredYear: number
@@ -161,6 +166,7 @@ export interface NoticeMetadata {
 export interface EventFacts {
   startDate: string
   endDate: string
+  procedureEffectiveWindow: string
   airportIcao: string
   airportName: string
   fieldElevationFt: number
