@@ -12,7 +12,6 @@ import {
   type PhaseDefinition
 } from '~/content/oshkosh'
 import { Checklist } from '~/components/checklist/Checklist'
-import { SourceBadge } from '~/components/sources/SourceBadge'
 
 interface BriefingSectionProps {
   phase: PhaseDefinition
@@ -147,14 +146,12 @@ export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
       {phase.id === 'depart' && <DepartureSubBlock />}
     </div>
 
-    <aside className="space-y-4 xl:sticky xl:top-36">
-      {phase.warnings && phase.warnings.length > 0 && (
+    {phase.warnings && phase.warnings.length > 0 && (
+      <aside className="space-y-4 xl:sticky xl:top-36">
         <div className="hidden xl:block">
           <WarningsBlock warnings={phase.warnings} />
         </div>
-      )}
-
-      <SourceBadge ids={phase.sources} />
-    </aside>
+      </aside>
+    )}
   </div>
 )

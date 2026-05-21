@@ -10,6 +10,7 @@ import { ContactSheet } from '~/components/feedback/ContactSheet'
 import { FeedbackPrompt } from '~/components/feedback/FeedbackPrompt'
 import { NewsPanel } from '~/components/news/NewsPanel'
 import { AppBar } from './AppBar'
+import { GlobalFooter } from './GlobalFooter'
 import { StatusBar } from './StatusBar'
 import { SkipToContent } from './SkipToContent'
 import { PhaseSpine } from '~/components/phase/PhaseSpine'
@@ -54,7 +55,7 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
         <main
           id="main-content"
           tabIndex={-1}
-          className="pb-[max(env(safe-area-inset-bottom),1.5rem)] focus:outline-none"
+          className="pb-[calc(max(env(safe-area-inset-bottom),1.5rem)+3rem)] focus:outline-none"
         >
           <PhaseHero variant={mode === 'in-flight' ? 'flight' : 'plan'} />
           <div className="mx-auto w-full max-w-screen-xl min-w-0 px-4 pt-4 tablet:px-6">
@@ -63,6 +64,7 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
         </main>
 
         <OfflineIndicator />
+        <GlobalFooter />
         <NewsPanel />
         <ContactSheet />
         <FeedbackPrompt />
