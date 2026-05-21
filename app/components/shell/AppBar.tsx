@@ -10,7 +10,8 @@ import {
   MdLocalAirport,
   MdAirlineStops,
   MdInstallMobile,
-  MdContactSupport
+  MdContactSupport,
+  MdArticle
 } from 'react-icons/md'
 import { ModeToggle } from '~/components/ui/ModeToggle'
 import { useAppStore } from '~/store/useAppStore'
@@ -203,17 +204,32 @@ export const AppBar = () => {
             </p>
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center divide-x divide-base-300/70">
           <button
             type="button"
-            onClick={() => openSheet('contact')}
-            className="btn btn-ghost hidden min-h-12 gap-1.5 px-3 text-sm tablet:inline-flex"
+            onClick={() => openSheet('news')}
+            className="btn btn-ghost min-h-12 gap-1.5 rounded-r-none px-3 text-sm max-[767px]:btn-circle max-[767px]:w-12 max-[767px]:px-0"
+            aria-label="Open AirVenture news"
           >
-            <MdContactSupport className="h-4 w-4" />
-            Contact
+            <MdArticle className="h-4 w-4" />
+            <span className="hidden tablet:inline">News</span>
           </button>
-          <ModeToggle />
-          <OverflowMenu />
+          <div className="hidden pl-1 tablet:block">
+            <button
+              type="button"
+              onClick={() => openSheet('contact')}
+              className="btn btn-ghost min-h-12 gap-1.5 rounded-l-none px-3 text-sm"
+            >
+              <MdContactSupport className="h-4 w-4" />
+              Contact
+            </button>
+          </div>
+          <div className="pl-1">
+            <ModeToggle />
+          </div>
+          <div className="pl-1">
+            <OverflowMenu />
+          </div>
         </div>
       </div>
     </header>

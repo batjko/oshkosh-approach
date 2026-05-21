@@ -8,6 +8,7 @@ import { OfflineIndicator } from '~/components/ui/OfflineIndicator'
 import { OnboardingFlow } from '~/components/onboarding/OnboardingFlow'
 import { ContactSheet } from '~/components/feedback/ContactSheet'
 import { FeedbackPrompt } from '~/components/feedback/FeedbackPrompt'
+import { NewsPanel } from '~/components/news/NewsPanel'
 import { AppBar } from './AppBar'
 import { StatusBar } from './StatusBar'
 import { SkipToContent } from './SkipToContent'
@@ -62,6 +63,7 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
         </main>
 
         <OfflineIndicator />
+        <NewsPanel />
         <ContactSheet />
         <FeedbackPrompt />
       </div>

@@ -23,6 +23,7 @@ export type SectionId =
 export type SheetId =
   | 'notice'
   | 'profile'
+  | 'news'
   | 'signs'
   | 'alternates'
   | 'divert'
