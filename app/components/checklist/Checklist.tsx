@@ -1,23 +1,41 @@
 import { useState } from 'react'
 import { MdCheckCircleOutline, MdCheckCircle, MdStarBorder } from 'react-icons/md'
-import type { ChecklistItem } from '~/content/oshkosh'
+import type { ChecklistItem, PhaseId } from '~/content/oshkosh'
+import { trackAppEvent } from '~/utils/analytics'
 
 interface ChecklistProps {
   items: ChecklistItem[]
   variant?: 'default' | 'cockpit'
-  trackingKey?: string
+  phaseId?: PhaseId
+  trackingKey?: 'primary' | 'secondary'
 }
 
 /**
  * Stateless-friendly checklist. Local toggle state is intentional - the
  * checklist is a working surface, not a persisted compliance log.
  */
-export const Checklist = ({ items, variant = 'default' }: ChecklistProps) => {
+export const Checklist = ({
+  items,
+  variant = 'default',
+  phaseId,
+  trackingKey
+}: ChecklistProps) => {
   const [done, setDone] = useState<Record<string, boolean>>({})
   const cockpit = variant === 'cockpit'
 
-  const toggle = (id: string) =>
-    setDone((d) => ({ ...d, [id]: !d[id] }))
+  const toggle = (item: ChecklistItem) => {
+    const checked = !done[item.id]
+    setDone((d) => ({ ...d, [item.id]: checked }))
+    if (!phaseId || !trackingKey) return
+    trackAppEvent('checklist item toggled', {
+      phase: phaseId,
+      checklist: trackingKey,
+      item_id: item.id,
+      checked,
+      variant,
+      required: !!item.required
+    })
+  }
 
   if (items.length === 0) return null
 
@@ -29,7 +47,7 @@ export const Checklist = ({ items, variant = 'default' }: ChecklistProps) => {
           <li key={item.id}>
             <button
               type="button"
-              onClick={() => toggle(item.id)}
+              onClick={() => toggle(item)}
               className={`checklist-row tap-target w-full text-left transition ${
                 checked
                   ? 'border-success/50 bg-success/10'

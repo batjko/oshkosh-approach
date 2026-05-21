@@ -8,7 +8,11 @@ import {
   phaseById
 } from '~/content/oshkosh'
 import type { PhaseId } from '~/content/oshkosh'
-import { trackAppEvent } from '~/utils/analytics'
+import {
+  trackAppEvent,
+  type SheetCloseMethod,
+  type SheetOpenSurface
+} from '~/utils/analytics'
 
 export type AppMode = 'pre-flight' | 'in-flight'
 export type Theme = 'chart' | 'cockpit'
@@ -70,6 +74,22 @@ export const defaultSectionForPhase = (phase: PhaseId): SectionId => {
   }
 }
 
+interface OpenSheetOptions {
+  surface?: SheetOpenSurface
+}
+
+interface CloseSheetOptions {
+  method?: SheetCloseMethod
+}
+
+const trackSectionViewed = (
+  phase: PhaseId,
+  section: SectionId,
+  mode: AppMode
+): void => {
+  trackAppEvent('section viewed', { phase, section, mode })
+}
+
 interface AppState {
   /** Stable named phase ID. */
   currentPhase: PhaseId
@@ -110,6 +130,9 @@ interface AppState {
   /** Which sheet is open, if any. Session-only. */
   openSheet: SheetId | null
 
+  /** Timestamp used to measure sheet/panel dwell time. Session-only. */
+  openSheetOpenedAt: number | null
+
   /** Whether persisted browser state has been loaded after hydration. */
   hasHydrated: boolean
 
@@ -131,8 +154,8 @@ interface AppState {
   completeOnboarding: () => void
   resetOnboarding: () => void
   setActiveSection: (section: SectionId) => void
-  openSheetAction: (sheet: SheetId) => void
-  closeSheet: () => void
+  openSheetAction: (sheet: SheetId, options?: OpenSheetOptions) => void
+  closeSheet: (options?: CloseSheetOptions) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -151,16 +174,20 @@ export const useAppStore = create<AppState>()(
       onboardingComplete: false,
       activeSection: defaultSectionForPhase(firstPhase.id),
       openSheet: null,
+      openSheetOpenedAt: null,
       hasHydrated: false,
 
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 
       setCurrentPhase: (id, source = 'spine') => {
         if (!phaseById(id)) return
-        const prev = get().currentPhase
+        const state = get()
+        const prev = state.currentPhase
         if (prev === id) return
-        set({ currentPhase: id, activeSection: defaultSectionForPhase(id) })
+        const activeSection = defaultSectionForPhase(id)
+        set({ currentPhase: id, activeSection })
         trackAppEvent('phase changed', { from: prev, to: id, source })
+        trackSectionViewed(id, activeSection, state.mode)
       },
 
       nextPhase: () => {
@@ -169,15 +196,17 @@ export const useAppStore = create<AppState>()(
         const next = phaseAtOrder(current.order + 1)
         const nextId = (next ?? lastPhase).id
         if (nextId === state.currentPhase) return
+        const activeSection = defaultSectionForPhase(nextId)
         set({
           currentPhase: nextId,
-          activeSection: defaultSectionForPhase(nextId)
+          activeSection
         })
         trackAppEvent('phase changed', {
           from: state.currentPhase,
           to: nextId,
           source: 'hero_next'
         })
+        trackSectionViewed(nextId, activeSection, state.mode)
       },
 
       prevPhase: () => {
@@ -186,15 +215,17 @@ export const useAppStore = create<AppState>()(
         const prev = phaseAtOrder(current.order - 1)
         const prevId = (prev ?? firstPhase).id
         if (prevId === state.currentPhase) return
+        const activeSection = defaultSectionForPhase(prevId)
         set({
           currentPhase: prevId,
-          activeSection: defaultSectionForPhase(prevId)
+          activeSection
         })
         trackAppEvent('phase changed', {
           from: state.currentPhase,
           to: prevId,
           source: 'hero_prev'
         })
+        trackSectionViewed(prevId, activeSection, state.mode)
       },
 
       setMode: (mode) => {
@@ -272,19 +303,45 @@ export const useAppStore = create<AppState>()(
         if (get().activeSection === section) return
         set({ activeSection: section })
         const state = get()
-        trackAppEvent('section viewed', {
+        trackSectionViewed(state.currentPhase, section, state.mode)
+      },
+
+      openSheetAction: (sheet, options = {}) => {
+        const state = get()
+        if (state.openSheet === sheet) return
+
+        if (state.openSheet && state.openSheetOpenedAt) {
+          trackAppEvent('sheet closed', {
+            sheet: state.openSheet,
+            close_method: 'programmatic',
+            duration_ms: Date.now() - state.openSheetOpenedAt,
+            phase: state.currentPhase,
+            mode: state.mode
+          })
+        }
+
+        set({ openSheet: sheet, openSheetOpenedAt: Date.now() })
+        trackAppEvent('sheet opened', {
+          sheet,
+          surface: options.surface ?? 'programmatic',
           phase: state.currentPhase,
-          section,
           mode: state.mode
         })
       },
 
-      openSheetAction: (sheet) => {
-        set({ openSheet: sheet })
-        trackAppEvent('sheet opened', { sheet })
-      },
+      closeSheet: (options = {}) => {
+        const state = get()
+        if (!state.openSheet) return
 
-      closeSheet: () => set({ openSheet: null })
+        trackAppEvent('sheet closed', {
+          sheet: state.openSheet,
+          close_method: options.method ?? 'programmatic',
+          duration_ms: state.openSheetOpenedAt ? Date.now() - state.openSheetOpenedAt : 0,
+          phase: state.currentPhase,
+          mode: state.mode
+        })
+        set({ openSheet: null, openSheetOpenedAt: null })
+      }
     }),
     {
       name: 'oshkosh-app-storage-v2',

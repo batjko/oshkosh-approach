@@ -94,7 +94,7 @@ export const StatusBar = () => {
         <div className="-mx-4 overflow-x-auto px-4 scrollbar-none scroll-fade-x tablet:mx-0 tablet:overflow-visible tablet:px-0 tablet:scroll-fade-x-none">
           <div className="flex min-w-min items-center gap-1.5 tablet:min-w-0 tablet:flex-wrap">
             <PillButton
-              onClick={() => openSheet('notice')}
+              onClick={() => openSheet('notice', { surface: 'status_bar' })}
               active={noticeOk}
               warn={!noticeOk}
               ariaLabel="Notice status, opens notice sheet"
@@ -104,7 +104,7 @@ export const StatusBar = () => {
               }
             />
             <PillButton
-              onClick={() => openSheet('profile')}
+              onClick={() => openSheet('profile', { surface: 'status_bar' })}
               active={!!profile}
               warn={!profile}
               ariaLabel="Aircraft profile, opens profile sheet"

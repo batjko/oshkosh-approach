@@ -130,7 +130,12 @@ export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
         <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
           Do this
         </h3>
-        <Checklist items={phase.primaryActions} variant="default" />
+        <Checklist
+          items={phase.primaryActions}
+          variant="default"
+          phaseId={phase.id}
+          trackingKey="primary"
+        />
       </section>
 
       {phase.secondaryActions && phase.secondaryActions.length > 0 && (
@@ -138,7 +143,11 @@ export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
           <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
             If time permits
           </h3>
-          <Checklist items={phase.secondaryActions} />
+          <Checklist
+            items={phase.secondaryActions}
+            phaseId={phase.id}
+            trackingKey="secondary"
+          />
         </section>
       )}
 

@@ -1,52 +1,32 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type { Survey } from 'posthog-js'
 
 import { profileById } from '~/content/oshkosh'
 import { Sheet } from '~/components/sheet/Sheet'
 import { useAnalyticsStatus, useOnline } from '~/components/feedback/feedbackPromptHooks'
 import {
+  buildBrowserContext,
+  CONTACT_REQUEST_TYPES,
+  roundCoordinate,
+  trackContactFallbackUsed,
+  trackContactFormLoaded,
+  trackContactSubmitted,
+  type ContactRequestLabel,
+  type SurveyEventProperties
+} from '~/components/feedback/contactAnalytics'
+import {
   captureContactSurveyShown,
   loadContactSurvey,
   submitContactSurvey
 } from '~/components/feedback/posthogFeedback'
 import { useAppStore } from '~/store/useAppStore'
-
-const REQUEST_TYPES = [
-  'Bug or technical issue',
-  'Inaccurate information',
-  'Feature request',
-  'Partnership or affiliation',
-  'Other'
-] as const
+import type { ContactUnavailableReason } from '~/utils/analytics'
 
 type ContactSurveyStatus = 'idle' | 'loading' | 'ready' | 'submitting' | 'submitted' | 'unavailable'
-
-type SurveyEventProperties = Record<string, string | number | boolean | null>
 
 const readEnv = (key: string): string | undefined => {
   const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env
   return env?.[key]
-}
-
-const roundCoordinate = (value: number): number => Number(value.toFixed(5))
-
-const buildBrowserContext = (): SurveyEventProperties => {
-  if (typeof window === 'undefined') return {}
-
-  const properties: SurveyEventProperties = {
-    viewport_width: window.innerWidth,
-    viewport_height: window.innerHeight,
-    device_pixel_ratio: window.devicePixelRatio,
-    contact_pathname: window.location.pathname
-  }
-
-  if (typeof navigator !== 'undefined') {
-    properties.user_agent = navigator.userAgent
-    properties.platform = navigator.platform
-    properties.language = navigator.language
-  }
-
-  return properties
 }
 
 export const ContactSheet = () => {
@@ -64,10 +44,28 @@ export const ContactSheet = () => {
   const fallbackEmail = readEnv('VITE_PUBLIC_CONTACT_EMAIL')
   const [status, setStatus] = useState<ContactSurveyStatus>('idle')
   const [message, setMessage] = useState<string | null>(null)
+  const [unavailableReason, setUnavailableReason] =
+    useState<ContactUnavailableReason | null>(null)
   const [survey, setSurvey] = useState<Survey | null>(null)
-  const [requestType, setRequestType] = useState<(typeof REQUEST_TYPES)[number]>(REQUEST_TYPES[0])
+  const [requestType, setRequestType] = useState<ContactRequestLabel>(CONTACT_REQUEST_TYPES[0])
   const [details, setDetails] = useState('')
   const [email, setEmail] = useState('')
+  const contactLoadTrackedRef = useRef<string | null>(null)
+
+  const captureContactLoad = useCallback((
+    loadStatus: 'ready' | 'unavailable',
+    reason: ContactUnavailableReason | null
+  ) => {
+    const key = `${loadStatus}:${reason ?? 'none'}:${online}:${analyticsStatus}`
+    if (contactLoadTrackedRef.current === key) return
+    contactLoadTrackedRef.current = key
+    trackContactFormLoaded({
+      status: loadStatus,
+      reason,
+      online,
+      analyticsStatus
+    })
+  }, [analyticsStatus, online])
 
   const diagnosticProperties = useMemo(() => {
     const profile = aircraftProfileId ? profileById(aircraftProfileId) : undefined
@@ -109,10 +107,12 @@ export const ContactSheet = () => {
     if (open) return
     setStatus('idle')
     setMessage(null)
+    setUnavailableReason(null)
     setSurvey(null)
     setDetails('')
     setEmail('')
-    setRequestType(REQUEST_TYPES[0])
+    setRequestType(CONTACT_REQUEST_TYPES[0])
+    contactLoadTrackedRef.current = null
   }, [open])
 
   useEffect(() => {
@@ -121,12 +121,16 @@ export const ContactSheet = () => {
     if (!online) {
       setStatus('unavailable')
       setMessage('The contact form needs a network connection. Reconnect and try again.')
+      setUnavailableReason('offline')
+      captureContactLoad('unavailable', 'offline')
       return
     }
 
     if (analyticsStatus === 'disabled') {
       setStatus('unavailable')
       setMessage('The contact form is unavailable because analytics is disabled or blocked.')
+      setUnavailableReason('analytics_disabled')
+      captureContactLoad('unavailable', 'analytics_disabled')
       return
     }
 
@@ -146,23 +150,29 @@ export const ContactSheet = () => {
         if (!survey) {
           setStatus('unavailable')
           setMessage('The contact form is not configured yet.')
+          setUnavailableReason('survey_unconfigured')
+          captureContactLoad('unavailable', 'survey_unconfigured')
           return
         }
         setSurvey(survey)
         setStatus('ready')
+        setUnavailableReason(null)
         captureContactSurveyShown(survey)
+        captureContactLoad('ready', null)
         setMessage(null)
       })
       .catch(() => {
         if (cancelled) return
         setStatus('unavailable')
         setMessage('The contact form could not load. Please try again.')
+        setUnavailableReason('load_failed')
+        captureContactLoad('unavailable', 'load_failed')
       })
 
     return () => {
       cancelled = true
     }
-  }, [analyticsStatus, diagnosticProperties, online, open, status, survey])
+  }, [analyticsStatus, captureContactLoad, online, open, status, survey])
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -182,6 +192,11 @@ export const ContactSheet = () => {
       email: email.trim(),
       properties: requestType === 'Bug or technical issue' ? diagnosticProperties : {}
     })
+    trackContactSubmitted({
+      requestType,
+      email,
+      diagnosticContextIncluded: requestType === 'Bug or technical issue'
+    })
     setStatus('submitted')
     setMessage('Thanks, message received. Follow-up only happens if an email address was provided.')
   }
@@ -189,6 +204,9 @@ export const ContactSheet = () => {
   const fallbackAction = fallbackEmail ? (
     <a
       href={`mailto:${fallbackEmail}?subject=Oshkosh%20Approach%20contact`}
+      onClick={() =>
+        trackContactFallbackUsed(unavailableReason ?? 'load_failed', true)
+      }
       className="btn btn-outline tap-target mt-3 w-full"
     >
       Email contact instead
@@ -260,12 +278,12 @@ export const ContactSheet = () => {
               id="contact-request-type"
               value={requestType}
               onChange={(event) =>
-                setRequestType(event.currentTarget.value as (typeof REQUEST_TYPES)[number])
+                setRequestType(event.currentTarget.value as ContactRequestLabel)
               }
               disabled={status === 'submitted' || status === 'submitting'}
               className="block min-h-12 w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-base text-base-content shadow-inner outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
-              {REQUEST_TYPES.map((type) => (
+              {CONTACT_REQUEST_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>

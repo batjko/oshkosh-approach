@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { MdError, MdRefresh, MdWarning } from 'react-icons/md'
+import type { NewsLoadMoreTrigger } from '~/utils/analytics'
 import { NewsCard } from './NewsCard'
 import type { NewsFeedStatus, NewsItem, NewsSourceStatus } from './types'
 
@@ -9,8 +10,9 @@ interface NewsFeedListProps {
   hasMore: boolean
   error: string | null
   sources: NewsSourceStatus[]
-  onLoadMore: () => void
+  onLoadMore: (trigger: NewsLoadMoreTrigger) => void
   onRetry: () => void
+  onArticleOpen: (item: NewsItem) => void
 }
 
 const SourceWarning = ({ sources }: { sources: NewsSourceStatus[] }) => {
@@ -60,7 +62,8 @@ export const NewsFeedList = ({
   error,
   sources,
   onLoadMore,
-  onRetry
+  onRetry,
+  onArticleOpen
 }: NewsFeedListProps) => {
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -72,7 +75,7 @@ export const NewsFeedList = ({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting) onLoadMore()
+        if (entry?.isIntersecting) onLoadMore('intersection')
       },
       { rootMargin: '360px 0px' }
     )
@@ -117,7 +120,7 @@ export const NewsFeedList = ({
     <div className="space-y-3">
       <SourceWarning sources={sources} />
       {items.map((item) => (
-        <NewsCard key={item.id} item={item} />
+        <NewsCard key={item.id} item={item} onOpen={onArticleOpen} />
       ))}
       {hasMore && (
         <div ref={sentinelRef} className="py-2">
@@ -129,7 +132,7 @@ export const NewsFeedList = ({
             <button
               type="button"
               className="btn btn-ghost min-h-12 w-full text-sm"
-              onClick={onLoadMore}
+              onClick={() => onLoadMore('button')}
             >
               Load older stories
             </button>

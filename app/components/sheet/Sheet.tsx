@@ -39,14 +39,20 @@ export const Sheet = ({ id, title, description, children, footer }: SheetProps) 
   useEffect(() => {
     const dlg = ref.current
     if (!dlg) return
-    const handleClose = () => close()
+    const handleCancel = (event: Event) => {
+      event.preventDefault()
+      close({ method: 'escape' })
+    }
+    const handleClose = () => close({ method: 'native' })
     const handleClick = (e: MouseEvent) => {
       // Backdrop click: native <dialog> reports the dialog as the target.
-      if (e.target === dlg) close()
+      if (e.target === dlg) close({ method: 'backdrop' })
     }
+    dlg.addEventListener('cancel', handleCancel)
     dlg.addEventListener('close', handleClose)
     dlg.addEventListener('click', handleClick)
     return () => {
+      dlg.removeEventListener('cancel', handleCancel)
       dlg.removeEventListener('close', handleClose)
       dlg.removeEventListener('click', handleClick)
     }
@@ -73,7 +79,7 @@ export const Sheet = ({ id, title, description, children, footer }: SheetProps) 
           </div>
           <button
             type="button"
-            onClick={close}
+            onClick={() => close({ method: 'button' })}
             className="btn btn-ghost btn-circle btn-sm shrink-0"
             aria-label="Close"
           >

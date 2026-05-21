@@ -16,7 +16,7 @@ export const ProfileSheet = () => {
       footer={
         <button
           type="button"
-          onClick={close}
+          onClick={() => close({ method: 'button' })}
           className="btn btn-primary tap-target w-full"
           disabled={!profileId}
         >

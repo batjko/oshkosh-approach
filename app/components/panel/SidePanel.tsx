@@ -63,14 +63,14 @@ export const SidePanel = ({
 
     const handleCancel = (event: Event) => {
       event.preventDefault()
-      close()
+      close({ method: 'escape' })
     }
     const handleClose = () => {
       setVisible(false)
-      close()
+      close({ method: 'native' })
     }
     const handleClick = (event: MouseEvent) => {
-      if (event.target === dlg) close()
+      if (event.target === dlg) close({ method: 'backdrop' })
     }
 
     dlg.addEventListener('cancel', handleCancel)
@@ -95,7 +95,7 @@ export const SidePanel = ({
     const deltaX = event.clientX - start.x
     const deltaY = event.clientY - start.y
     if (deltaX > SWIPE_CLOSE_PX && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
-      close()
+      close({ method: 'swipe' })
     }
   }
 
@@ -111,7 +111,7 @@ export const SidePanel = ({
           className="absolute inset-0 cursor-default"
           tabIndex={-1}
           aria-label="Close panel"
-          onClick={close}
+          onClick={() => close({ method: 'backdrop' })}
         />
         <div
           className={`relative flex h-full w-full max-w-[min(100vw,30rem)] flex-col overflow-hidden border-l border-base-300 bg-base-100 shadow-cockpit transition-transform duration-200 ease-out will-change-transform motion-reduce:transition-none tablet:max-w-[28rem] desktop:max-w-[30rem] ${
@@ -140,7 +140,7 @@ export const SidePanel = ({
             </div>
             <button
               type="button"
-              onClick={close}
+              onClick={() => close({ method: 'button' })}
               className="btn btn-ghost btn-circle btn-sm shrink-0"
               aria-label="Close"
             >

@@ -1,11 +1,20 @@
 import { MdOpenInNew } from 'react-icons/md'
 import { phaseById, sourceList } from '~/content/oshkosh'
 import { useAppStore } from '~/store/useAppStore'
+import { trackAppEvent } from '~/utils/analytics'
 
 export const GlobalFooter = () => {
   const currentPhase = useAppStore((s) => s.currentPhase)
   const phase = phaseById(currentPhase)
   const phaseSources = phase ? sourceList(phase.sources) : []
+  const trackSourceOpen = (sourceId: string) => {
+    trackAppEvent('external link opened', {
+      surface: 'global_footer',
+      destination: 'phase_source',
+      phase: currentPhase,
+      source_id: sourceId
+    })
+  }
 
   return (
     <footer
@@ -26,6 +35,7 @@ export const GlobalFooter = () => {
               href={source.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackSourceOpen(source.id)}
               className="inline-flex shrink-0 items-center gap-1 font-medium text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100"
             >
               {source.label}
@@ -42,6 +52,14 @@ export const GlobalFooter = () => {
           href="https://batjko.com"
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() =>
+            trackAppEvent('external link opened', {
+              surface: 'global_footer',
+              destination: 'attribution',
+              phase: currentPhase,
+              source_id: null
+            })
+          }
           className="shrink-0 border-l border-base-300 pl-3 text-base-content/55 underline-offset-4 hover:text-base-content hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100"
           aria-label="Visit batjko.com"
         >

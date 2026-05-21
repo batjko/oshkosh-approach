@@ -22,7 +22,7 @@ export const DivertFab = () => {
   return (
     <button
       type="button"
-      onClick={() => open('divert')}
+      onClick={() => open('divert', { surface: 'divert_fab' })}
       aria-label="Open divert sheet"
       className="fixed bottom-4 right-4 z-40 flex h-14 items-center gap-2 rounded-full border border-error/30 bg-error px-4 text-sm font-semibold text-error-content shadow-cockpit transition hover:scale-105 hover:bg-error/90"
       style={{

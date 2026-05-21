@@ -23,7 +23,7 @@ export const NoticeSheet = () => {
           type="button"
           onClick={() => {
             setAcknowledged(isUnlocked ? null : notice.requiredYear)
-            if (!isUnlocked) close()
+            if (!isUnlocked) close({ method: 'button' })
           }}
           aria-pressed={isUnlocked}
           className={`btn tap-target w-full gap-2 ${

@@ -80,7 +80,7 @@ const OverflowMenu = () => {
               role="menuitem"
               type="button"
               onClick={() => {
-                openSheet('contact')
+                openSheet('contact', { surface: 'overflow_menu' })
                 setOpen(false)
               }}
               className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
@@ -126,7 +126,7 @@ const OverflowMenu = () => {
               role="menuitem"
               type="button"
               onClick={() => {
-                openSheet('signs')
+                openSheet('signs', { surface: 'overflow_menu' })
                 setOpen(false)
               }}
               className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
@@ -139,7 +139,7 @@ const OverflowMenu = () => {
               role="menuitem"
               type="button"
               onClick={() => {
-                openSheet('alternates')
+                openSheet('alternates', { surface: 'overflow_menu' })
                 setOpen(false)
               }}
               className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
@@ -153,7 +153,7 @@ const OverflowMenu = () => {
                 role="menuitem"
                 type="button"
                 onClick={() => {
-                  openSheet('divert')
+                  openSheet('divert', { surface: 'overflow_menu' })
                   setOpen(false)
                 }}
                 className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
@@ -187,7 +187,7 @@ const NewsRibbonButton = () => {
   return (
     <button
       type="button"
-      onClick={() => openSheet('news')}
+      onClick={() => openSheet('news', { surface: 'news_ribbon' })}
       className="group absolute right-0 top-1/2 z-10 flex min-h-12 -translate-y-1/2 items-center gap-1.5 overflow-hidden rounded-l-full border border-r-0 border-white/45 bg-base-100/65 py-2 pl-3 pr-3 text-sm font-semibold text-primary shadow-[0_10px_30px_rgba(0,0,0,0.16)] backdrop-blur-xl transition hover:bg-base-100/80 hover:shadow-cockpit tablet:gap-2 tablet:pl-4 tablet:pr-5"
       aria-label="Open AirVenture news"
     >
@@ -234,7 +234,7 @@ export const AppBar = () => {
           <div className="hidden pl-1 tablet:block">
             <button
               type="button"
-              onClick={() => openSheet('contact')}
+              onClick={() => openSheet('contact', { surface: 'app_bar' })}
               className="btn btn-ghost min-h-12 gap-1.5 rounded-l-none px-3 text-sm"
             >
               <MdContactSupport className="h-4 w-4" />

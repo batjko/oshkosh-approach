@@ -127,6 +127,53 @@ type ModeChangeReason = 'allowed' | 'blocked_notice'
 
 type NotamFetchStatus = 'success' | 'error'
 
+export type AnalyticsStatusLabel = 'loading' | 'ready' | 'disabled'
+
+export type SheetOpenSurface =
+  | 'app_bar'
+  | 'overflow_menu'
+  | 'news_ribbon'
+  | 'status_bar'
+  | 'divert_fab'
+  | 'programmatic'
+
+export type SheetCloseMethod =
+  | 'button'
+  | 'backdrop'
+  | 'escape'
+  | 'swipe'
+  | 'native'
+  | 'programmatic'
+
+export type ContactUnavailableReason =
+  | 'offline'
+  | 'analytics_disabled'
+  | 'survey_unconfigured'
+  | 'load_failed'
+
+export type ContactRequestType =
+  | 'bug'
+  | 'inaccurate_information'
+  | 'feature_request'
+  | 'partnership'
+  | 'other'
+
+type NewsFeedStatus = 'success' | 'error'
+type NewsFeedTrigger = 'initial' | 'refresh' | 'retry' | 'load_more'
+export type NewsLoadMoreTrigger = 'intersection' | 'button'
+
+export type ExternalLinkSurface =
+  | 'global_footer'
+  | 'news_panel'
+  | 'news_source_chip'
+
+export type ExternalLinkDestination =
+  | 'phase_source'
+  | 'attribution'
+  | 'official_eaa_news'
+  | 'official_notice'
+  | 'news_source_homepage'
+
 export type AppEventMap = {
   'phase changed': {
     from: PhaseId
@@ -144,6 +191,16 @@ export type AppEventMap = {
   }
   'sheet opened': {
     sheet: SheetId
+    surface: SheetOpenSurface
+    phase: PhaseId
+    mode: AppMode
+  }
+  'sheet closed': {
+    sheet: SheetId
+    close_method: SheetCloseMethod
+    duration_ms: number
+    phase: PhaseId
+    mode: AppMode
   }
   'gps toggled': {
     enabled: boolean
@@ -180,6 +237,58 @@ export type AppEventMap = {
   'pwa installed': {
     /** Captured from the `appinstalled` event - user has installed. */
     display_mode: 'standalone' | 'minimal-ui' | 'browser' | 'unknown'
+  }
+  'contact form loaded': {
+    status: 'ready' | 'unavailable'
+    reason: ContactUnavailableReason | null
+    online: boolean
+    analytics_status: AnalyticsStatusLabel
+  }
+  'contact submitted': {
+    request_type: ContactRequestType
+    has_email: boolean
+    diagnostic_context_included: boolean
+  }
+  'contact fallback used': {
+    reason: ContactUnavailableReason
+    has_fallback_email: boolean
+  }
+  'news feed loaded': {
+    status: NewsFeedStatus
+    trigger: NewsFeedTrigger
+    offset: number
+    item_count: number
+    total: number
+    source_ok_count: number
+    source_error_count: number
+    elapsed_ms: number
+  }
+  'news feed refreshed': {
+    item_count: number
+  }
+  'news load more': {
+    trigger: NewsLoadMoreTrigger
+    offset: number
+    items_added: number
+  }
+  'news article opened': {
+    source_id: string
+    item_id: string
+    has_image: boolean
+  }
+  'external link opened': {
+    surface: ExternalLinkSurface
+    destination: ExternalLinkDestination
+    phase: PhaseId | null
+    source_id: string | null
+  }
+  'checklist item toggled': {
+    phase: PhaseId
+    checklist: 'primary' | 'secondary'
+    item_id: string
+    checked: boolean
+    variant: 'default' | 'cockpit'
+    required: boolean
   }
 }
 

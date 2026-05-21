@@ -3,6 +3,7 @@ import type { NewsItem } from './types'
 
 interface NewsCardProps {
   item: NewsItem
+  onOpen?: (item: NewsItem) => void
 }
 
 const formatPublishedAt = (iso: string): string => {
@@ -23,7 +24,7 @@ const lineClamp = (lines: number) => ({
   overflow: 'hidden'
 })
 
-export const NewsCard = ({ item }: NewsCardProps) => {
+export const NewsCard = ({ item, onOpen }: NewsCardProps) => {
   const categories = item.categories.slice(0, 2)
 
   return (
@@ -32,6 +33,7 @@ export const NewsCard = ({ item }: NewsCardProps) => {
         href={item.url}
         target="_blank"
         rel="noreferrer"
+        onClick={() => onOpen?.(item)}
         className="grid gap-3 p-3 text-base-content no-underline max-[374px]:grid-cols-1 min-[375px]:grid-cols-[6.75rem_minmax(0,1fr)]"
       >
         <div className="h-24 overflow-hidden rounded-cockpit border border-base-300 bg-base-200 max-[374px]:h-32">
