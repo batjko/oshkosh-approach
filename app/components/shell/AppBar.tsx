@@ -181,6 +181,32 @@ const OverflowMenu = () => {
   )
 }
 
+const NewsRibbonButton = () => {
+  const openSheet = useAppStore((s) => s.openSheetAction)
+
+  return (
+    <button
+      type="button"
+      onClick={() => openSheet('news')}
+      className="group absolute right-0 top-1/2 z-10 flex min-h-12 -translate-y-1/2 items-center gap-1.5 overflow-hidden rounded-l-full border border-r-0 border-white/45 bg-base-100/65 py-2 pl-3 pr-3 text-sm font-semibold text-primary shadow-[0_10px_30px_rgba(0,0,0,0.16)] backdrop-blur-xl transition hover:bg-base-100/80 hover:shadow-cockpit tablet:gap-2 tablet:pl-4 tablet:pr-5"
+      aria-label="Open AirVenture news"
+    >
+      <span
+        className="pointer-events-none absolute inset-0 rounded-l-full bg-gradient-to-br from-white/65 via-white/20 to-primary/15 opacity-90"
+        aria-hidden="true"
+      />
+      <span
+        className="pointer-events-none absolute left-4 top-1.5 h-px w-12 rounded-full bg-white/80 opacity-80 transition group-hover:w-16"
+        aria-hidden="true"
+      />
+      <span className="relative grid h-7 w-7 place-items-center rounded-full border border-primary/20 bg-primary/15 shadow-sm">
+        <MdArticle className="h-4 w-4" />
+      </span>
+      <span className="relative leading-none">News</span>
+    </button>
+  )
+}
+
 /** Top app bar: identity, mode toggle, overflow menu. */
 export const AppBar = () => {
   const openSheet = useAppStore((s) => s.openSheetAction)
@@ -190,7 +216,7 @@ export const AppBar = () => {
       role="banner"
       className="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur"
     >
-      <div className="mx-auto flex w-full max-w-screen-xl items-center gap-2 px-4 py-2 tablet:px-6">
+      <div className="relative mx-auto flex w-full max-w-screen-xl items-center gap-2 px-4 py-2 pr-[6.5rem] tablet:px-6 tablet:pr-36">
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-cockpit bg-primary text-primary-content">
             <span className="font-cockpit text-sm font-bold">OSH</span>
@@ -205,15 +231,6 @@ export const AppBar = () => {
           </div>
         </div>
         <div className="ml-auto flex items-center divide-x divide-base-300/70">
-          <button
-            type="button"
-            onClick={() => openSheet('news')}
-            className="btn btn-ghost min-h-12 gap-1.5 rounded-r-none px-3 text-sm max-[767px]:btn-circle max-[767px]:w-12 max-[767px]:px-0"
-            aria-label="Open AirVenture news"
-          >
-            <MdArticle className="h-4 w-4" />
-            <span className="hidden tablet:inline">News</span>
-          </button>
           <div className="hidden pl-1 tablet:block">
             <button
               type="button"
@@ -232,6 +249,7 @@ export const AppBar = () => {
           </div>
         </div>
       </div>
+      <NewsRibbonButton />
     </header>
   )
 }
