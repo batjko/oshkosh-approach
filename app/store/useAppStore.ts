@@ -26,6 +26,7 @@ export type SheetId =
   | 'signs'
   | 'alternates'
   | 'divert'
+  | 'contact'
 
 /**
  * Where a phase change originated from. Helps us tell pilot-driven

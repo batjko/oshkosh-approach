@@ -6,6 +6,7 @@ import { ErrorBoundary } from '~/components/ErrorBoundary'
 import { ErrorNotification } from '~/components/ui/ErrorNotification'
 import { OfflineIndicator } from '~/components/ui/OfflineIndicator'
 import { OnboardingFlow } from '~/components/onboarding/OnboardingFlow'
+import { ContactSheet } from '~/components/feedback/ContactSheet'
 import { FeedbackPrompt } from '~/components/feedback/FeedbackPrompt'
 import { AppBar } from './AppBar'
 import { StatusBar } from './StatusBar'
@@ -61,6 +62,7 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
         </main>
 
         <OfflineIndicator />
+        <ContactSheet />
         <FeedbackPrompt />
       </div>
     </ErrorBoundary>

@@ -9,7 +9,8 @@ import {
   MdLocalParking,
   MdLocalAirport,
   MdAirlineStops,
-  MdInstallMobile
+  MdInstallMobile,
+  MdContactSupport
 } from 'react-icons/md'
 import { ModeToggle } from '~/components/ui/ModeToggle'
 import { useAppStore } from '~/store/useAppStore'
@@ -73,6 +74,19 @@ const OverflowMenu = () => {
               </button>
             </li>
           )}
+          <li role="none" className="border-b border-base-300 tablet:hidden">
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                openSheet('contact')
+                setOpen(false)
+              }}
+              className="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+            >
+              <MdContactSupport className="h-4 w-4" /> Contact
+            </button>
+          </li>
           <li role="none">
             <button
               role="menuitem"
@@ -167,29 +181,41 @@ const OverflowMenu = () => {
 }
 
 /** Top app bar: identity, mode toggle, overflow menu. */
-export const AppBar = () => (
-  <header
-    role="banner"
-    className="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur"
-  >
-    <div className="mx-auto flex w-full max-w-screen-xl items-center gap-2 px-4 py-2 tablet:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-cockpit bg-primary text-primary-content">
-          <span className="font-cockpit text-sm font-bold">OSH</span>
+export const AppBar = () => {
+  const openSheet = useAppStore((s) => s.openSheetAction)
+
+  return (
+    <header
+      role="banner"
+      className="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur"
+    >
+      <div className="mx-auto flex w-full max-w-screen-xl items-center gap-2 px-4 py-2 tablet:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-cockpit bg-primary text-primary-content">
+            <span className="font-cockpit text-sm font-bold">OSH</span>
+          </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-sm font-semibold leading-tight">
+              Oshkosh Approach
+            </h1>
+            <p className="truncate text-[11px] text-base-content/60 max-[374px]:hidden">
+              Fisk arrival companion
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-semibold leading-tight">
-            Oshkosh Approach
-          </h1>
-          <p className="truncate text-[11px] text-base-content/60 max-[374px]:hidden">
-            Fisk arrival companion
-          </p>
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => openSheet('contact')}
+            className="btn btn-ghost hidden min-h-12 gap-1.5 px-3 text-sm tablet:inline-flex"
+          >
+            <MdContactSupport className="h-4 w-4" />
+            Contact
+          </button>
+          <ModeToggle />
+          <OverflowMenu />
         </div>
       </div>
-      <div className="ml-auto flex items-center gap-1">
-        <ModeToggle />
-        <OverflowMenu />
-      </div>
-    </div>
-  </header>
-)
+    </header>
+  )
+}

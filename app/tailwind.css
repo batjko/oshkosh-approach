@@ -60,14 +60,20 @@ body {
     @apply mb-2 block text-sm font-medium leading-snug text-base-content;
   }
   .feedback-survey textarea,
-  .feedback-survey input,
   .feedback-survey select {
     @apply block min-h-28 w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-base text-base-content shadow-inner outline-none;
   }
+  .feedback-survey input:not([type="radio"]):not([type="checkbox"]) {
+    @apply block min-h-12 w-full rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-base text-base-content shadow-inner outline-none;
+  }
   .feedback-survey textarea:focus,
-  .feedback-survey input:focus,
+  .feedback-survey input:not([type="radio"]):not([type="checkbox"]):focus,
   .feedback-survey select:focus {
     @apply border-primary ring-2 ring-primary/20;
+  }
+  .feedback-survey input[type="radio"],
+  .feedback-survey input[type="checkbox"] {
+    @apply min-h-5 min-w-5 accent-primary;
   }
   .feedback-survey textarea {
     @apply resize-y;

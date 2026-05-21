@@ -4,6 +4,8 @@ import { isAnalyticsDisabled, isAnalyticsReady } from '~/utils/analytics'
 
 const ANALYTICS_READY_POLL_MS = 250
 
+export type AnalyticsStatus = 'loading' | 'ready' | 'disabled'
+
 export const useOnline = () => {
   const [online, setOnline] = useState(true)
 
@@ -22,21 +24,29 @@ export const useOnline = () => {
   return online
 }
 
-export const useAnalyticsReady = () => {
-  const [ready, setReady] = useState(false)
+export const useAnalyticsStatus = (): AnalyticsStatus => {
+  const [status, setStatus] = useState<AnalyticsStatus>(() => {
+    if (isAnalyticsReady()) return 'ready'
+    if (isAnalyticsDisabled()) return 'disabled'
+    return 'loading'
+  })
 
   useEffect(() => {
     if (isAnalyticsReady()) {
-      setReady(true)
+      setStatus('ready')
       return
     }
-    if (isAnalyticsDisabled()) return
+    if (isAnalyticsDisabled()) {
+      setStatus('disabled')
+      return
+    }
 
     const intervalId = window.setInterval(() => {
       if (isAnalyticsReady()) {
-        setReady(true)
+        setStatus('ready')
         window.clearInterval(intervalId)
       } else if (isAnalyticsDisabled()) {
+        setStatus('disabled')
         window.clearInterval(intervalId)
       }
     }, ANALYTICS_READY_POLL_MS)
@@ -44,5 +54,7 @@ export const useAnalyticsReady = () => {
     return () => window.clearInterval(intervalId)
   }, [])
 
-  return ready
+  return status
 }
+
+export const useAnalyticsReady = () => useAnalyticsStatus() === 'ready'
