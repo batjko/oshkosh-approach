@@ -1,4 +1,5 @@
 import type { LoaderFunction } from '@remix-run/node'
+import { discoverabilityPages } from '~/content/discoverability'
 import {
   event,
   frequencies,
@@ -108,6 +109,9 @@ const buildLlmsFullBody = (): string => {
   lines.push('## Related resources')
   lines.push('')
   lines.push(`- [App home](${homepage})`)
+  for (const page of discoverabilityPages) {
+    lines.push(`- [${page.h1}](${absoluteUrl(page.path)})`)
+  }
   lines.push(`- [Short AI content map](${llmsUrl})`)
   lines.push(`- [XML sitemap](${sitemapUrl})`)
   lines.push('')

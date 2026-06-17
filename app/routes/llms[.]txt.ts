@@ -1,4 +1,5 @@
 import type { LoaderFunction } from '@remix-run/node'
+import { discoverabilityPages } from '~/content/discoverability'
 import { event, notice, sources } from '~/content/oshkosh'
 import {
   SITE_DESCRIPTION,
@@ -78,9 +79,26 @@ const buildLlmsBody = (): string => {
   lines.push(`- Daily airport closure: ${event.dailyAirportClosure}`)
   lines.push('')
 
+  lines.push('## 2026 prep timeline (descriptive)')
+  lines.push('')
+  if (notice.publishedAt) {
+    lines.push(`- FAA AirVenture Notice published: ${notice.publishedAt}`)
+  }
+  lines.push('- EAA flying-in webinar: 2026-06-17 19:00 CDT (check EAA flying-in hub)')
+  lines.push(`- Special flight procedures effective: ${event.procedureEffectiveWindow}`)
+  lines.push('- Convention show week: 2026-07-20 through 2026-07-26 (EAA AirVenture)')
+  lines.push('')
+
   lines.push('## App entry point')
   lines.push('')
   lines.push(`- [${SITE_NAME} home](${homepage}): single-page Remix app with phase-driven Fisk VFR arrival flow, source-backed procedural content, and live KOSH NOTAMs fetched on each load.`)
+  lines.push('')
+
+  lines.push('## Crawlable briefing pages')
+  lines.push('')
+  for (const page of discoverabilityPages) {
+    lines.push(`- [${page.h1}](${absoluteUrl(page.path)}): ${page.description}`)
+  }
   lines.push('')
 
   lines.push('## Authoritative sources')

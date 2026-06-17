@@ -2,7 +2,7 @@
   "id": "/?source=pwa",
   "name": "Oshkosh Approach - Fisk VFR arrival companion",
   "short_name": "Oshkosh Approach",
-  "description": "Source-backed Fisk VFR arrival companion for EAA AirVenture Oshkosh (KOSH). Read the official FAA AirVenture Notice; this app surfaces frequencies, transitions, runway dots, holds, alternates, divert triggers, and live KOSH NOTAMs.",
+  "description": "Free 2026 Fisk VFR arrival companion for EAA AirVenture Oshkosh (KOSH). Read the FAA AirVenture Notice first; surfaces frequencies, transitions, runway dots, holds, alternates, divert triggers, and live KOSH NOTAMs.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",

@@ -17,33 +17,43 @@ export const SITE_NAME = 'Oshkosh Approach'
 
 /** Long-form site title for the document `<title>`. */
 export const SITE_TITLE =
-  'Oshkosh Approach - Fisk VFR arrival companion for EAA AirVenture'
+  'Oshkosh Approach - 2026 Fisk VFR arrival companion for EAA AirVenture'
 
 export const SITE_TAGLINE =
-  'Source-backed Fisk VFR arrival companion for EAA AirVenture Oshkosh'
+  'Source-backed 2026 Fisk VFR arrival companion for EAA AirVenture Oshkosh'
 
 export const SITE_DESCRIPTION =
-  'Phase-driven Fisk VFR arrival companion for EAA AirVenture Oshkosh ' +
-  '(KOSH). Read the official FAA AirVenture Notice; this app surfaces ' +
-  'frequencies, transitions, runway dots, holds, alternates, divert ' +
-  'triggers, and live KOSH NOTAMs for general-aviation pilots flying in.'
+  'Free phase-driven Fisk VFR arrival companion for EAA AirVenture Oshkosh ' +
+  '2026 (KOSH). The 2026 FAA AirVenture Notice is released — read it ' +
+  'first at EAA.org/NOTAM; this PWA surfaces Notice-sourced frequencies, ' +
+  'transitions, runway dots, holds, alternates, divert triggers, and live ' +
+  'KOSH NOTAMs on every reload for general-aviation pilots flying the Fisk ' +
+  'arrival.'
 
 /**
  * Keywords are advisory only for traditional search engines but help
  * AI summarisers anchor the topic. Keep concise and descriptive.
  */
 export const SITE_KEYWORDS = [
-  'EAA AirVenture Oshkosh',
+  'EAA AirVenture Oshkosh 2026',
+  'Oshkosh NOTAM 2026',
   'Oshkosh arrival',
   'Fisk VFR arrival',
+  'Fisk approach Oshkosh',
   'KOSH NOTAM',
   'AirVenture Notice',
   'Wittman Regional',
   'Ripon to Fisk',
   'general aviation',
   'pilot briefing',
-  'VFR arrival procedure'
+  'VFR arrival procedure',
+  'fly in to Oshkosh'
 ]
+
+/** Homepage sitemap lastmod during the annual prep/show window. */
+export const homepageSitemapLastMod = (): string => {
+  return notice.publishedAt ?? `${notice.baselineYear}-01-01`
+}
 
 /** Default social/OG image; falls back gracefully if absent. */
 export const SOCIAL_IMAGE_PATH = '/icons/icon-512.png'

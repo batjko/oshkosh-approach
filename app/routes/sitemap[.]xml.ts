@@ -1,6 +1,7 @@
 import type { LoaderFunction } from '@remix-run/node'
+import { discoverabilityPages } from '~/content/discoverability'
 import { notice } from '~/content/oshkosh'
-import { absoluteUrl, escapeXml } from '~/utils/seo'
+import { absoluteUrl, escapeXml, homepageSitemapLastMod } from '~/utils/seo'
 
 interface SitemapEntry {
   loc: string
@@ -22,28 +23,34 @@ interface SitemapEntry {
  * the content map.
  */
 const buildEntries = (): SitemapEntry[] => {
-  const today = new Date().toISOString().slice(0, 10)
-  const lastmod = notice.publishedAt ?? today
+  const resourceLastmod = notice.publishedAt ?? new Date().toISOString().slice(0, 10)
+  const pageEntries: SitemapEntry[] = discoverabilityPages.map((page) => ({
+    loc: absoluteUrl(page.path),
+    lastmod: page.lastmod,
+    changefreq: 'monthly',
+    priority: page.id === 'sources' || page.id === 'about' ? 0.6 : 0.8
+  }))
 
   return [
     {
       loc: absoluteUrl('/'),
-      lastmod,
+      lastmod: homepageSitemapLastMod(),
       changefreq: 'daily',
       priority: 1.0
     },
     {
       loc: absoluteUrl('/llms.txt'),
-      lastmod,
+      lastmod: resourceLastmod,
       changefreq: 'monthly',
       priority: 0.5
     },
     {
       loc: absoluteUrl('/llms-full.txt'),
-      lastmod,
+      lastmod: resourceLastmod,
       changefreq: 'monthly',
       priority: 0.4
-    }
+    },
+    ...pageEntries
   ]
 }
 

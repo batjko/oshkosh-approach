@@ -1,4 +1,6 @@
 import { MdOpenInNew } from 'react-icons/md'
+import { Link } from '@remix-run/react'
+import { discoverabilityNav } from '~/content/discoverability'
 import { phaseById, sourceList } from '~/content/oshkosh'
 import { useAppStore } from '~/store/useAppStore'
 import { trackAppEvent } from '~/utils/analytics'
@@ -45,6 +47,24 @@ export const GlobalFooter = () => {
             <span key={source.id} className="shrink-0 text-base-content/55">
               {source.label}
             </span>
+          ))}
+        </nav>
+
+        <nav
+          aria-label="Briefing pages"
+          className="hidden min-w-0 max-w-[22rem] items-center gap-2 overflow-x-auto whitespace-nowrap tablet:flex"
+        >
+          <span className="shrink-0 font-semibold uppercase tracking-wide text-base-content/45">
+            Briefing
+          </span>
+          {discoverabilityNav.map((item) => (
+            <Link
+              key={item.href}
+              to={item.href}
+              className="shrink-0 font-medium text-primary/80 underline-offset-4 hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100"
+            >
+              {item.label}
+            </Link>
           ))}
         </nav>
 
