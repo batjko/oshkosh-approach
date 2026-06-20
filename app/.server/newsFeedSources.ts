@@ -17,6 +17,15 @@ const AIRVENTURE_KEYWORDS = [
 
 export const NEWS_SOURCES: NewsSource[] = [
   {
+    id: 'eaa',
+    label: 'EAA AirVenture',
+    feedUrl:
+      'https://www.eaa.org/airventure/eaa-airventure-news-and-multimedia/eaa-airventure-news',
+    homepageUrl:
+      'https://www.eaa.org/airventure/eaa-airventure-news-and-multimedia/eaa-airventure-news',
+    format: 'eaa-airventure-html'
+  },
+  {
     id: 'avweb',
     label: 'AVweb',
     feedUrl: 'https://avweb.com/topics/air-shows-events/airventure/feed/',

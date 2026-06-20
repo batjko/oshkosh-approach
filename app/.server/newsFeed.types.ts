@@ -3,6 +3,7 @@ export interface NewsSource {
   label: string
   feedUrl: string
   homepageUrl: string
+  format?: 'rss' | 'eaa-airventure-html'
   filterKeywords?: string[]
 }
 

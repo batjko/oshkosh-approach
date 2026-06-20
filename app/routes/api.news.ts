@@ -7,6 +7,10 @@ const NEWS_HEADERS = {
   'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
 }
 
+const REFRESH_NEWS_HEADERS = {
+  'Cache-Control': 'no-store'
+}
+
 const DEFAULT_LIMIT = 12
 const MAX_LIMIT = 24
 const MAX_OFFSET = 60
@@ -31,8 +35,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     1,
     MAX_LIMIT
   )
+  const forceRefresh = url.searchParams.get('refresh') === '1'
 
-  const feed = await getAirVentureNews()
+  const feed = await getAirVentureNews({ forceRefresh })
   const items = await attachArticleImages(feed.items.slice(offset, offset + limit))
 
   return json(
@@ -43,6 +48,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       fetchedAt: feed.fetchedAt,
       sources: feed.sources
     },
-    { headers: NEWS_HEADERS }
+    { headers: forceRefresh ? REFRESH_NEWS_HEADERS : NEWS_HEADERS }
   )
 }

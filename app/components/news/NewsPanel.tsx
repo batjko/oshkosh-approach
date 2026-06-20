@@ -109,8 +109,20 @@ export const NewsPanel = () => {
     setError(null)
 
     try {
-      const response = await fetch(`/api/news?offset=${offset}&limit=${PAGE_SIZE}`, {
+      const forceRefresh =
+        offset === 0 && (trigger === 'refresh' || trigger === 'retry')
+      const params = new URLSearchParams({
+        offset: String(offset),
+        limit: String(PAGE_SIZE)
+      })
+      if (forceRefresh) {
+        params.set('refresh', '1')
+        params.set('t', String(startedAt))
+      }
+
+      const response = await fetch(`/api/news?${params.toString()}`, {
         signal: controller.signal,
+        cache: forceRefresh ? 'no-store' : 'default',
         headers: { Accept: 'application/json' }
       })
       if (!response.ok) {

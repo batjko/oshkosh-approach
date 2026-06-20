@@ -10,7 +10,11 @@ import {
   NEWS_FETCH_TIMEOUT_MS,
   NEWS_SOURCES
 } from './newsFeedSources'
-import { extractItems, normalizeItem } from './newsFeedParsing'
+import {
+  extractEaaAirVentureHtmlItems,
+  extractItems,
+  normalizeItem
+} from './newsFeedParsing'
 export { attachArticleImages } from './newsFeedImages'
 
 let cachedNews: { expiresAt: number, result: NewsFeedResult } | null = null
@@ -41,9 +45,12 @@ const fetchSource = async (
   }
 
   const xml = await response.text()
-  const items = extractItems(xml)
-    .map((item) => normalizeItem(source, item))
-    .filter((item): item is NewsItem => Boolean(item))
+  const items =
+    source.format === 'eaa-airventure-html'
+      ? extractEaaAirVentureHtmlItems(xml, source)
+      : extractItems(xml)
+        .map((item) => normalizeItem(source, item))
+        .filter((item): item is NewsItem => Boolean(item))
 
   return {
     source: {
@@ -82,9 +89,13 @@ const sourceError = (source: NewsSource, error: unknown): NewsSourceStatus => ({
   error: error instanceof Error ? error.message : 'Unknown feed error'
 })
 
-export const getAirVentureNews = async (): Promise<NewsFeedResult> => {
+export const getAirVentureNews = async ({
+  forceRefresh = false
+}: { forceRefresh?: boolean } = {}): Promise<NewsFeedResult> => {
   const now = Date.now()
-  if (cachedNews && cachedNews.expiresAt > now) return cachedNews.result
+  if (!forceRefresh && cachedNews && cachedNews.expiresAt > now) {
+    return cachedNews.result
+  }
 
   const settled = await Promise.allSettled(
     NEWS_SOURCES.map(async (source) => ({

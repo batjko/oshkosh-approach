@@ -72,6 +72,15 @@ const parseDate = (value: unknown): string => {
   return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString()
 }
 
+const parseUsDate = (value: string): string => {
+  const match = value.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (!match) return ''
+
+  const [, month, day, year] = match
+  const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString()
+}
+
 const canonicalizeUrl = (raw: string): string => {
   try {
     const url = new URL(raw)
@@ -187,6 +196,48 @@ export const normalizeItem = (
   }
 
   return matchesSourceFilter(source, normalized) ? normalized : null
+}
+
+const resolveUrl = (raw: string, baseUrl: string): string | undefined => {
+  try {
+    return new URL(raw, baseUrl).toString()
+  } catch {
+    return undefined
+  }
+}
+
+export const extractEaaAirVentureHtmlItems = (
+  html: string,
+  source: NewsSource
+): NewsItem[] => {
+  const articlePattern =
+    /<div class="cell">\s*(?:<!--[\s\S]*?-->\s*)?(?:<a\b[^>]*href="[^"]*"[^>]*>\s*<img\b[^>]*src="(?<imageUrl>[^"]+)"[^>]*>\s*<\/a>\s*)?<small>\s*Published:\s*(?<publishedAt>[^<]+)<\/small>[\s\S]*?<a\b[^>]*href="(?<url>[^"]+)"[^>]*>\s*<h3>(?<title>[\s\S]*?)<\/h3>\s*<\/a>\s*<p>(?<snippet>[\s\S]*?)<\/p>/gi
+
+  return [...html.matchAll(articlePattern)]
+    .map((match): NewsItem | null => {
+      const groups = match.groups ?? {}
+      const title = stripHtml(groups.title ?? '')
+      const url = canonicalizeUrl(resolveUrl(groups.url ?? '', source.feedUrl) ?? '')
+      if (!title || !url) return null
+
+      const imageUrl = groups.imageUrl
+        ? resolveUrl(groups.imageUrl, source.feedUrl)
+        : undefined
+      const normalized = {
+        id: `${source.id}:${hash(url)}`,
+        sourceId: source.id,
+        sourceLabel: source.label,
+        title,
+        url,
+        publishedAt: parseUsDate(groups.publishedAt ?? ''),
+        snippet: truncate(stripHtml(groups.snippet ?? '')),
+        imageUrl,
+        categories: ['EAA AirVenture Oshkosh']
+      }
+
+      return matchesSourceFilter(source, normalized) ? normalized : null
+    })
+    .filter((item): item is NewsItem => Boolean(item))
 }
 
 export const extractItems = (xml: string): RssItemRecord[] => {
