@@ -226,17 +226,16 @@ belong in PostHog *events*, not logs.
 
 ---
 
-## Geolocation & geofencing
+## Geolocation and proximity utilities
 
 `app/hooks/useGeolocation.ts` is opt-in: it only calls
 `navigator.geolocation` when `gpsEnabled` is `true` in the store.
 It writes back `currentLocation` (lat, lng, accuracy) and clears it
 on opt-out.
 
-`app/utils/geofencing.ts` derives circular zones from canonical
-waypoints in `app/content/oshkosh/waypoints.ts` and ties them to
-named `PhaseId`s. Auto-advance is opt-in and never moves the phase
-backwards.
+`app/utils/geofencing.ts` provides distance and proximity calculations
+from canonical waypoints. GPS is display-only: it never changes the
+selected phase or issues operational prompts.
 
 ---
 

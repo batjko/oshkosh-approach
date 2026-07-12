@@ -25,12 +25,12 @@ export const AlternatesSheet = () => (
               </div>
             </div>
             <a
-              href={`https://www.google.com/maps/search/${alt.icao}`}
+              href={alt.referenceUrl}
               target="_blank"
               rel="noreferrer"
               className="btn btn-ghost btn-xs gap-1"
             >
-              <MdLaunch className="h-3 w-3" /> Map
+              <MdLaunch className="h-3 w-3" /> FAA airport info
             </a>
           </header>
           <p className="mt-2 text-sm text-base-content/80">{alt.description}</p>
@@ -42,13 +42,16 @@ export const AlternatesSheet = () => (
             </ul>
           )}
           {alt.contactPhone && (
-            <a
-              href={`tel:${alt.contactPhone.replace(/[^0-9+]/g, '')}`}
-              className="mt-2 inline-flex items-center gap-1 text-xs text-primary"
-            >
-              <MdPhone className="h-3 w-3" />
-              {alt.contactPhone}
-            </a>
+            <div className="mt-2 text-xs">
+              <div className="text-base-content/60">{alt.contactPurpose}</div>
+              <a
+                href={`tel:${alt.contactPhone.replace(/[^0-9+]/g, '')}`}
+                className="mt-0.5 inline-flex items-center gap-1 text-primary"
+              >
+                <MdPhone className="h-3 w-3" />
+                {alt.contactPhone}
+              </a>
+            </div>
           )}
         </li>
       ))}

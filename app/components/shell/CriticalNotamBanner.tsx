@@ -11,8 +11,8 @@ interface CriticalNotam {
 const MAX_VISIBLE = 3
 
 /**
- * Phase-agnostic banner reserved for genuinely critical NOTAMs only —
- * closures, TFRs, IFR-only, emergencies. Surfaces above the PhaseHero.
+ * Phase-agnostic keyword triage for NOTAMs that may be critical.
+ * The raw FAA text is always shown; the label is not an FAA assessment.
  *
  * If empty (the common case during normal ops), the banner renders
  * nothing. Capped at 3 visible items with a "more" affordance that
@@ -44,7 +44,7 @@ export const CriticalNotamBanner = ({
             <MdWarningAmber className="mt-0.5 h-4 w-4 shrink-0 text-error" />
             <div className="min-w-0 flex-1">
               <span className="font-semibold text-error">
-                Critical NOTAM {n.number}
+                Potentially critical — keyword match · {n.number}
               </span>
               <span className="ml-1 line-clamp-2 text-base-content/80">
                 {n.text}
@@ -54,7 +54,7 @@ export const CriticalNotamBanner = ({
               type="button"
               onClick={() => setDismissed((prev) => new Set(prev).add(n.id))}
               className="btn btn-ghost btn-xs"
-              aria-label={`Dismiss critical NOTAM ${n.number}`}
+              aria-label={`Dismiss potentially critical NOTAM ${n.number}`}
             >
               <MdClose className="h-3 w-3" />
             </button>
@@ -66,7 +66,7 @@ export const CriticalNotamBanner = ({
             onClick={() => setActiveSection('notams')}
             className="link link-error text-xs underline-offset-2"
           >
-            +{overflow} more critical NOTAM{overflow === 1 ? '' : 's'} —
+            +{overflow} more potential match{overflow === 1 ? '' : 'es'} —
             open NOTAMs tab
           </button>
         )}

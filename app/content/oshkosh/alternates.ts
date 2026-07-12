@@ -14,7 +14,11 @@ export const alternates: AlternateAirport[] = [
       'If diverting on a VFR flight plan, change your destination with Flight Service.',
       'Bus / shuttle service to OSH typically available.'
     ],
-    contactPhone: '920-922-6000'
+    contactPhone: '920-922-6000',
+    contactPurpose: 'Fond du Lac Skyport hard-surface parking arrangements',
+    referenceUrl: 'https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dafd/',
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fond du Lac Arrival/Departure' }]
   },
   {
     id: 'katw',
@@ -28,14 +32,19 @@ export const alternates: AlternateAirport[] = [
       'Camping not allowed; parking brakes must remain OFF while parked.',
       'Self-service fuel unavailable during AirVenture.'
     ],
-    contactPhone: '920-738-3034'
+    referenceUrl: 'https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dafd/',
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Appleton Arrival/Departure' }]
   },
   {
     id: 'kgrb',
     icao: 'KGRB',
     name: 'Green Bay - Austin Straubel',
-    description: 'Listed alternate option. Use when KFLD/KATW saturated.',
-    hasTower: true
+    description: 'One of the alternate airports listed in the Notice. Brief current weather, NOTAMs, airport information, fuel, and onward transportation.',
+    hasTower: true,
+    referenceUrl: 'https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dafd/',
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Preflight Planning - Planning Your Alternate Airport' }]
   }
 ]
 

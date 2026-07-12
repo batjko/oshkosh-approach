@@ -1,77 +1,89 @@
-/**
- * Lightweight content invariants. Run as a plain node script:
- *   node --experimental-vm-modules ... (or via vitest if added).
- *
- * The assertions are intentionally framework-free so they can run from
- * `tsx`, `node`, or any future test runner without binding to a specific
- * one. They guard against drift in the canonical content layer.
- */
+import { describe, expect, it } from 'vitest'
+
 import {
+  aircraftProfiles,
+  alternates,
   arrivalSigns,
+  departureRunways,
   departureSigns,
+  event,
   frequencies,
   headerFrequencyIds,
+  holds,
   notice,
   phases,
   runways,
+  sources,
   transitions,
   waypoints
 } from '..'
 
-const assert = (cond: unknown, msg: string) => {
-  if (!cond) throw new Error(`Invariant failed: ${msg}`)
-}
+describe('2026 content invariants', () => {
+  it('separates event dates from the procedure window', () => {
+    expect(event.eventStartDate).toBe('2026-07-20')
+    expect(event.eventEndDate).toBe('2026-07-26')
+    expect(event.procedureStart).toBe('2026-07-16T12:00:00-05:00')
+    expect(event.procedureEnd).toBe('2026-07-27T12:00:00-05:00')
+  })
 
-const assertions: Array<[string, () => void]> = [
-  ['phases ordered uniquely', () => {
-    const orders = phases.map((p) => p.order)
-    assert(new Set(orders).size === orders.length, 'phase order collision')
-    const sorted = [...orders].sort((a, b) => a - b)
-    sorted.forEach((o, i) => assert(o === i, `phase order gap at ${i}`))
-  }],
-  ['header frequencies resolve', () => {
-    headerFrequencyIds.forEach((id) =>
-      assert(frequencies.find((f) => f.id === id), `missing frequency ${id}`)
-    )
-  }],
-  ['runway tower freqs known', () => {
-    const towerFreqs = new Set(['118.5', '126.6'])
-    runways.forEach((r) =>
-      assert(towerFreqs.has(r.towerFreq), `runway ${r.id} bad tower freq`)
-    )
-  }],
-  ['transitions point to known waypoints', () => {
-    transitions.forEach((t) =>
-      assert(
-        waypoints.find((w) => w.id === t.startWaypointId),
-        `transition ${t.id} unknown waypoint`
-      )
-    )
-  }],
-  ['notice gate requires 2026', () => {
-    assert(notice.requiredYear === 2026, 'requiredYear must be 2026')
-  }],
-  ['arrival/departure sign codes are uppercase', () => {
-    [...arrivalSigns, ...departureSigns].forEach((s) =>
-      assert(s.code === s.code.toUpperCase(), `sign ${s.code} not uppercase`)
-    )
-  }]
-]
+  it('uses the released FAA 2026 Notice', () => {
+    expect(notice.status).toBe('released')
+    expect(notice.requiredYear).toBe(2026)
+    expect(notice.baselineYear).toBe(2026)
+    expect(notice.baselineUrl).toContain('faa.gov/')
+  })
 
-let failed = 0
-for (const [name, run] of assertions) {
-  try {
-    run()
-    console.log(`ok - ${name}`)
-  } catch (err) {
-    failed += 1
-    console.error(`fail - ${name}: ${(err as Error).message}`)
-  }
-}
+  it('keeps phases ordered and source-backed', () => {
+    expect(phases.map((phase) => phase.order)).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+    for (const phase of phases) {
+      expect(phase.sourceRefs.length).toBeGreaterThan(0)
+      for (const ref of phase.sourceRefs) expect(sources[ref.sourceId]).toBeDefined()
+    }
+  })
 
-if (failed > 0) {
-  console.error(`${failed} invariant(s) failed`)
-  process.exitCode = 1
-} else {
-  console.log(`all ${assertions.length} invariants passed`)
-}
+  it('resolves header frequencies and preserves published values', () => {
+    for (const id of headerFrequencyIds) {
+      expect(frequencies.find((frequency) => frequency.id === id)).toBeDefined()
+    }
+    expect(frequencies.find((frequency) => frequency.id === 'arrival-atis')?.freq).toBe('125.9')
+    expect(frequencies.find((frequency) => frequency.id === 'fisk-approach')?.freq).toBe('120.7')
+    expect(frequencies.find((frequency) => frequency.id === 'osh-tower-north')?.freq).toBe('118.5')
+    expect(frequencies.find((frequency) => frequency.id === 'osh-tower-south')?.freq).toBe('126.6')
+  })
+
+  it('keeps transition and operational records source-backed', () => {
+    for (const transition of transitions) {
+      expect(waypoints.some((waypoint) => waypoint.id === transition.startWaypointId)).toBe(true)
+      expect(transition.sourceRefs.length).toBeGreaterThan(0)
+    }
+    for (const record of [...holds, ...runways, ...departureRunways, ...alternates]) {
+      expect(record.sourceRefs.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('preserves the published runway touchdown references', () => {
+    expect(runways.find((runway) => runway.id === 'rwy-9')?.aimPoints[0]?.feetRemaining).toBe(4400)
+    expect(runways.find((runway) => runway.id === 'rwy-27')?.aimPoints.map((point) => point.feetRemaining)).toEqual([4600, 3100])
+    expect(runways.find((runway) => runway.id === 'rwy-18r')?.aimPoints.map((point) => point.feetRemaining)).toEqual([6350, 4850])
+    expect(runways.find((runway) => runway.id === 'rwy-36r')?.aimPoints.map((point) => point.shape)).toEqual(['square', 'square'])
+  })
+
+  it('keeps specialty profiles distinct without invented speed defaults', () => {
+    const byId = new Map(aircraftProfiles.map((profile) => [profile.id, profile]))
+    expect(byId.get('standard')?.recommendedSpeedAlt).toMatchObject({ ias_kt: 90, altitude_ft_msl: 1800 })
+    expect(byId.get('high-performance')?.recommendedSpeedAlt).toMatchObject({ ias_kt: 135, altitude_ft_msl: 2300 })
+    expect(byId.get('turbine-warbird')?.recommendedSpeedAlt).toBeUndefined()
+    expect(byId.get('helicopter')?.recommendedSpeedAlt).toBeUndefined()
+    expect(byId.get('ultralight')?.recommendedSpeedAlt).toBeUndefined()
+    expect(byId.get('seaplane')?.recommendedSpeedAlt).toBeUndefined()
+    expect(byId.get('nordo')?.recommendedSpeedAlt).toBeUndefined()
+    expect(byId.get('amphibian-kosh')?.arrivalRoute).toBe('amphibian-fisk')
+    expect(byId.get('seaplane')?.arrivalRoute).toBe('seaplane')
+  })
+
+  it('keeps sign codes uppercase and unique', () => {
+    const signs = [...arrivalSigns, ...departureSigns]
+    expect(new Set(signs.map((sign) => sign.code)).size).toBe(signs.length)
+    for (const sign of signs) expect(sign.code).toBe(sign.code.toUpperCase())
+  })
+})

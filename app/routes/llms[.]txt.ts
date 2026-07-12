@@ -70,7 +70,9 @@ const buildLlmsBody = (): string => {
 
   lines.push('## Event facts')
   lines.push('')
-  lines.push(`- Event: EAA AirVenture Oshkosh ${event.startDate.slice(0, 4)}`)
+  lines.push(
+    `- Event: EAA AirVenture Oshkosh ${event.eventStartDate} through ${event.eventEndDate}`
+  )
   lines.push(`- Special flight procedures: ${event.procedureEffectiveWindow}`)
   lines.push(
     `- Airport: ${event.airportName} (${event.airportIcao}), ` +
@@ -91,7 +93,7 @@ const buildLlmsBody = (): string => {
 
   lines.push('## App entry point')
   lines.push('')
-  lines.push(`- [${SITE_NAME} home](${homepage}): single-page Remix app with phase-driven Fisk VFR arrival flow, source-backed procedural content, and live KOSH NOTAMs fetched on each load.`)
+  lines.push(`- [${SITE_NAME} home](${homepage}): single-page Remix app with phase-driven Fisk VFR arrival flow, source-backed procedural content, and KOSH NOTAMs freshly fetched on connected loads.`)
   lines.push('')
 
   lines.push('## Crawlable briefing pages')

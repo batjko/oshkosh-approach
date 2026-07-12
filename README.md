@@ -20,7 +20,7 @@ Live: <https://www.oshkosh-approach.com/>
 - **Phase-driven flow** — eight stable phases (preflight → enroute →
   transition → ripon-to-fisk → at-fisk → inbound-runway → ground →
   depart) with a chip-style spine you can step through manually or
-  let auto-advance via geofencing on opt-in GPS.
+  display an opt-in GPS position marker without changing the selected phase.
 - **Phase-aware sections** — Briefing, Map, Transitions, NOTAMs and
   Runway tabs surface only what's relevant to the current phase.
 - **Two modes** — `Plan` for ground prep (warm "chart" theme,

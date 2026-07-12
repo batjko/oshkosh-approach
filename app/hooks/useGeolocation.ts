@@ -1,11 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAppStore } from '~/store/useAppStore'
-import {
-  formatDistance,
-  getActiveZones,
-  getLocationSuggestedPhase,
-  getNearestWaypoint
-} from '~/utils/geofencing'
 import { showNotification } from '~/components/ui/ErrorNotification'
 
 /**
@@ -14,18 +8,12 @@ import { showNotification } from '~/components/ui/ErrorNotification'
  * nothing on first paint - no toast, no permission prompt - until the
  * user asks for it.
  *
- * Auto-advance never overrides the pilot during high-workload phases:
- * during 'ripon-to-fisk' and 'at-fisk' we suppress automatic phase
- * changes to avoid changing the briefing under the pilot's hands.
+ * GPS is display-only. It never changes phases or issues procedural prompts.
  */
 export const useGeolocation = () => {
   const setCurrentLocation = useAppStore((s) => s.setCurrentLocation)
-  const setCurrentPhase = useAppStore((s) => s.setCurrentPhase)
   const setGpsEnabled = useAppStore((s) => s.setGpsEnabled)
-  const currentPhase = useAppStore((s) => s.currentPhase)
-  const mode = useAppStore((s) => s.mode)
   const gpsEnabled = useAppStore((s) => s.gpsEnabled)
-  const previousZonesRef = useRef<string[]>([])
 
   useEffect(() => {
     if (!gpsEnabled) return
@@ -49,47 +37,6 @@ export const useGeolocation = () => {
           accuracy: position.coords.accuracy
         }
         setCurrentLocation(next)
-
-        const here: [number, number] = [next.lat, next.lng]
-        const active = getActiveZones(here)
-        const activeIds = active.map((z) => z.id)
-
-        active
-          .filter((z) => !previousZonesRef.current.includes(z.id))
-          .forEach((zone) => {
-            showNotification({
-              type: 'info',
-              title: `Entering ${zone.name}`,
-              message: zone.description,
-              autoClose: true
-            })
-          })
-        previousZonesRef.current = activeIds
-
-        if (mode === 'in-flight') {
-          const suppressedPhases = new Set(['ripon-to-fisk', 'at-fisk'])
-          if (!suppressedPhases.has(currentPhase)) {
-            const suggested = getLocationSuggestedPhase(here, currentPhase)
-            if (suggested) {
-              setCurrentPhase(suggested, 'gps_suggestion')
-              showNotification({
-                type: 'success',
-                title: 'Phase advanced',
-                message: `Auto-advanced to ${suggested.replace('-', ' ')}.`,
-                autoClose: true
-              })
-            }
-          }
-        }
-
-        if (active.length === 0) {
-          const nearest = getNearestWaypoint(here)
-          if (nearest) {
-            console.debug(
-              `Distance to ${nearest.zone.name}: ${formatDistance(nearest.distance)}`
-            )
-          }
-        }
       },
       (error) => {
         setCurrentLocation(null)
@@ -98,7 +45,7 @@ export const useGeolocation = () => {
             type: 'warning',
             title: 'GPS permission denied',
             message:
-              'Enable location access in your browser settings to use moving-map features.',
+              'Enable location access in your browser settings to display your position on the orientation map.',
             autoClose: true
           })
           setGpsEnabled(false)
@@ -127,9 +74,6 @@ export const useGeolocation = () => {
   }, [
     gpsEnabled,
     setCurrentLocation,
-    setCurrentPhase,
-    setGpsEnabled,
-    currentPhase,
-    mode
+    setGpsEnabled
   ])
 }

@@ -9,7 +9,7 @@ export const notice: NoticeMetadata = {
   baselineYear: 2026,
   requiredYear: 2026,
   status: 'released',
-  baselineUrl: 'https://www.eaa.org/~/media/2431455452d94e6fa97c7fdd8d2a864d.ashx',
+  baselineUrl: 'https://www.faa.gov/AIR_TRAFFIC/PUBLICATIONS/domesticnotices/dom26020_sp.html',
   landingPageUrl: 'https://www.eaa.org/airventure/eaa-fly-in-flying-to-oshkosh/eaa-airventure-oshkosh-notam',
   faaIndexUrl: 'https://www.faa.gov/air_traffic/publications/domesticnotices/',
   publishedAt: '2026-05-21',
@@ -19,8 +19,10 @@ export const notice: NoticeMetadata = {
 }
 
 export const event: EventFacts = {
-  startDate: '2026-07-16',
-  endDate: '2026-07-27',
+  eventStartDate: '2026-07-20',
+  eventEndDate: '2026-07-26',
+  procedureStart: '2026-07-16T12:00:00-05:00',
+  procedureEnd: '2026-07-27T12:00:00-05:00',
   procedureEffectiveWindow: 'Noon CDT Jul 16 - Noon CDT Jul 27, 2026',
   airportIcao: 'KOSH',
   airportName: 'Wittman Regional',
@@ -32,7 +34,6 @@ export const event: EventFacts = {
     'Sat Jul 25: 20:00 - 22:30 CDT night show',
     'Sun Jul 26: 13:00 - 17:00 CDT'
   ],
-  smsStatusInstructions: 'Text OSHARRIVAL to 64600 for updates on the current status of AirVenture arrivals.',
   notes: [
     'Arrivals normally resume ~30 min after each daytime airshow.',
     'Thursday Jul 23: no Fisk arrivals before 08:00 CDT.',
@@ -43,5 +44,13 @@ export const event: EventFacts = {
 /**
  * Whether the embedded Notice can be used for flight-day mode.
  */
-export const isFlightDayUnlocked = (): boolean =>
-  notice.status === 'released' && notice.baselineYear === notice.requiredYear
+export const isNoticeContentCurrent = (
+  metadata: NoticeMetadata = notice
+): boolean =>
+  metadata.status === 'released' && metadata.baselineYear === metadata.requiredYear
+
+export const canUseFlightMode = (
+  acknowledgedYear: number | null,
+  metadata: NoticeMetadata = notice
+): boolean =>
+  isNoticeContentCurrent(metadata) && acknowledgedYear === metadata.requiredYear

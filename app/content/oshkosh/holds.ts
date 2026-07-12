@@ -7,7 +7,9 @@ export const holds: HoldDefinition[] = [
     whenUsed: 'Aircraft at or beyond Ripon when ATC calls hold.',
     pattern: 'Standard left turns as depicted in the Notice.',
     exit: 'Rejoin tracks at SE corner of Rush Lake, then NE to Fisk.',
-    altitudeFtMsl: 1800
+    altitudeFtMsl: 1800,
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk Holding - Rush Lake' }]
   },
   {
     id: 'green-lake',
@@ -15,7 +17,9 @@ export const holds: HoldDefinition[] = [
     whenUsed: 'Aircraft on the Green Lake transition.',
     pattern: 'As depicted in the Notice.',
     exit: 'From SE corner Green Lake, direct Ripon, tracks NE to Fisk.',
-    altitudeFtMsl: 1800
+    altitudeFtMsl: 1800,
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk Holding - Green Lake' }]
   },
   {
     id: 'puckaway-lake',
@@ -23,7 +27,9 @@ export const holds: HoldDefinition[] = [
     whenUsed: 'Aircraft on the Puckaway transition.',
     pattern: 'Counter-clockwise starting at the SW corner.',
     exit: 'From SW corner, published transition toward Green Lake.',
-    altitudeFtMsl: 1800
+    altitudeFtMsl: 1800,
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk Holding - Puckaway Lake' }]
   }
 ]
 

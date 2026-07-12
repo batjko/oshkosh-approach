@@ -135,7 +135,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       {
         heading: 'How Oshkosh Approach handles NOTAMs',
         body:
-          'The app fetches live KOSH NOTAMs through the server loader on every page load and keeps the homepage response uncached. Static discoverability pages do not include raw NOTAM text because NOTAMs are time-sensitive.'
+          'When connected, the app fetches KOSH NOTAMs through the server loader on every page load and keeps the homepage response uncached. Offline or failed fetches are labeled unavailable or not current.'
       }
     ],
     faqs: [
@@ -343,7 +343,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
     path: '/kosh-notams',
     title: 'KOSH NOTAMs - Live Oshkosh NOTAM Companion',
     description:
-      'How Oshkosh Approach fetches and presents live KOSH NOTAMs without caching FAA NOTAM text in static pages.',
+      'How Oshkosh Approach fetches and presents KOSH NOTAMs when connected without caching FAA NOTAM text in static pages.',
     h1: 'KOSH NOTAM companion',
     intro:
       'Current KOSH NOTAMs are time-sensitive. Oshkosh Approach fetches them for the main app route on every page load and keeps this static page descriptive only.',
@@ -358,7 +358,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       {
         heading: 'Priority model',
         body:
-          'The app categorizes fetched NOTAMs for pilot scanning, reserving the top banner for truly critical items such as closures, TFRs, IFR-only constraints, and emergencies.'
+          'The app uses a keyword-based scan aid to surface NOTAMs that may need prompt review. This is not an FAA priority assessment; pilots must review the raw text and complete a full briefing.'
       },
       {
         heading: 'Open the live NOTAM view',
@@ -436,7 +436,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       {
         heading: 'What it includes',
         body:
-          'The app includes phase navigation, live KOSH NOTAM fetches, transition references, map support, runway assignment tools, aircraft profiles, alternates, signs, and divert planning.',
+          'The app includes phase navigation, connected KOSH NOTAM fetches, transition references, an orientation map, runway assignment tools, aircraft profiles, alternates, signs, and divert planning.',
         items: frequencies.map((frequency) => `${frequency.label}: ${frequency.category}`)
       }
     ]

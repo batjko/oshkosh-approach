@@ -7,6 +7,7 @@
     "build": "remix vite:build",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
+    "test": "vitest run",
     "start": "remix-serve ./build/server/index.js",
     "typecheck": "tsc"
   },
@@ -57,7 +58,8 @@
     "typescript": "^5.1.6",
     "vite": "^5.1.0",
     "vite-env-only": "^3.0.3",
-    "vite-tsconfig-paths": "^4.2.1"
+    "vite-tsconfig-paths": "^4.2.1",
+    "vitest": "^2.1.9"
   },
   "engines": {
     "node": ">=20.0.0"

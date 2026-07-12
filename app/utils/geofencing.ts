@@ -1,12 +1,9 @@
-import type { LatLng, PhaseId } from '~/content/oshkosh'
+import type { LatLng } from '~/content/oshkosh'
 import { waypoints, waypointById } from '~/content/oshkosh'
 
 /**
- * Geofencing utilities for the Oshkosh approach.
- *
- * Zones are derived from canonical waypoints and are tied to named phase IDs
- * rather than fragile numeric indices. Auto-advance is opt-in and never
- * skips backwards.
+ * Distance and proximity utilities for optional orientation features.
+ * These helpers never change flight phases or issue procedural guidance.
  */
 
 export interface GeofenceZone {
@@ -15,7 +12,6 @@ export interface GeofenceZone {
   center: LatLng
   /** Radius in meters. */
   radius: number
-  triggerPhase?: PhaseId
   description: string
 }
 
@@ -32,7 +28,6 @@ const zoneFromWaypoint = (
     name: wp.name,
     center: wp.position,
     radius: override.radius ?? meters(1),
-    triggerPhase: override.triggerPhase,
     description: override.description ?? wp.description
   }
 }
@@ -40,32 +35,26 @@ const zoneFromWaypoint = (
 export const geofenceZones: GeofenceZone[] = [
   zoneFromWaypoint('vpenv', {
     radius: meters(1),
-    triggerPhase: 'transition',
     description: 'Endeavor Bridge transition start.'
   }),
   zoneFromWaypoint('vpplk', {
     radius: meters(1),
-    triggerPhase: 'transition',
     description: 'Puckaway Lake transition start. Shoreline OFF YOUR LEFT.'
   }),
   zoneFromWaypoint('vpgrn', {
     radius: meters(1),
-    triggerPhase: 'transition',
     description: 'Green Lake transition start.'
   }),
   zoneFromWaypoint('vprip', {
     radius: meters(1),
-    triggerPhase: 'ripon-to-fisk',
     description: 'Ripon. Begin railroad-track leg NE.'
   }),
   zoneFromWaypoint('vpfis', {
     radius: meters(0.65),
-    triggerPhase: 'at-fisk',
     description: 'Fisk. Listen for ATC runway + tower assignment.'
   }),
   zoneFromWaypoint('kosh', {
     radius: meters(1),
-    triggerPhase: 'inbound-runway',
     description: 'Wittman Regional traffic pattern.'
   }),
   zoneFromWaypoint('rush-lake', {
@@ -110,34 +99,6 @@ export const getNearestWaypoint = (
     }
   }
   return best
-}
-
-/** Phase order map for monotonic advancement. */
-const phaseOrder: Record<PhaseId, number> = {
-  preflight: 0,
-  enroute: 1,
-  transition: 2,
-  'ripon-to-fisk': 3,
-  'at-fisk': 4,
-  'inbound-runway': 5,
-  ground: 6,
-  depart: 7
-}
-
-/**
- * Returns the suggested phase to advance to based on active zones, or null
- * if no advancement is suggested. Never advances backwards.
- */
-export const getLocationSuggestedPhase = (
-  point: LatLng,
-  current: PhaseId
-): PhaseId | null => {
-  const candidates = getActiveZones(point)
-    .map((z) => z.triggerPhase)
-    .filter((p): p is PhaseId => Boolean(p))
-    .filter((p) => phaseOrder[p] > phaseOrder[current])
-  if (candidates.length === 0) return null
-  return candidates.sort((a, b) => phaseOrder[a] - phaseOrder[b])[0]
 }
 
 export const formatDistance = (meterValue: number): string => {

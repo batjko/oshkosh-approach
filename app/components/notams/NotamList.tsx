@@ -100,7 +100,7 @@ const NotamCard = ({
             <span
               className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${priorityTone(priority.level)}`}
             >
-              {priority.level}
+              app scan: {priority.level}
             </span>
             <NotamTypeBadge type={notam.type} />
           </div>
@@ -150,6 +150,12 @@ export const NotamList = ({
     filteredNotams = sortNotamsByPriority(filteredNotams)
   }
 
+  const heading = fetchError
+    ? 'NOTAMs unavailable'
+    : online
+      ? 'KOSH NOTAMs'
+      : 'NOTAMs not current'
+
   const handleRefresh = () => {
     if (typeof window !== 'undefined') {
       clientLogger.info('notam.refresh.click', {
@@ -165,7 +171,7 @@ export const NotamList = ({
         <header className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="card-title flex items-center gap-2">
             <MdWarning className="text-warning" />
-            {online ? 'Current NOTAMs' : 'Last-known NOTAMs'} ({filteredNotams.length})
+            {heading} ({filteredNotams.length})
           </h2>
           <div className="flex flex-col items-start gap-1 text-xs text-base-content/70 sm:items-end">
             <span>
@@ -185,6 +191,10 @@ export const NotamList = ({
             </button>
           </div>
         </header>
+
+        <p className="mb-4 text-xs text-base-content/60">
+          App priority is a keyword-based scan aid, not an FAA assessment. Review every raw NOTAM and complete a full briefing for route, alternate, and FDC NOTAMs.
+        </p>
 
         {fetchError && (
           <div className="alert alert-error mb-4">
@@ -248,7 +258,7 @@ export const NotamList = ({
                 checked={sortByPriority}
                 onChange={(e) => setSortByPriority(e.target.checked)}
               />
-              <span className="label-text text-sm">Sort by priority</span>
+              <span className="label-text text-sm">Sort by app scan priority</span>
             </label>
           </div>
 
@@ -280,7 +290,7 @@ export const NotamList = ({
               <table className="table table-zebra table-sm min-w-[56rem] table-fixed">
                 <thead>
                   <tr>
-                    <th className="w-12">Priority</th>
+                    <th className="w-12">App scan</th>
                     <th className="w-20">Number</th>
                     <th className="w-36">Type</th>
                     <th className="w-28">Valid until</th>

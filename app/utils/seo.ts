@@ -27,7 +27,7 @@ export const SITE_DESCRIPTION =
   '2026 (KOSH). The 2026 FAA AirVenture Notice is released — read it ' +
   'first at EAA.org/NOTAM; this PWA surfaces Notice-sourced frequencies, ' +
   'transitions, runway dots, holds, alternates, divert triggers, and live ' +
-  'KOSH NOTAMs on every reload for general-aviation pilots flying the Fisk ' +
+  'KOSH NOTAMs freshly fetched on connected reloads for general-aviation pilots flying the Fisk ' +
   'arrival.'
 
 /**
@@ -132,8 +132,8 @@ export const buildJsonLdGraph = (): Array<Record<string, unknown>> => {
     '@type': 'Event',
     '@id': `${homepage}#airventure`,
     name: 'EAA AirVenture Oshkosh',
-    startDate: event.startDate,
-    endDate: event.endDate,
+    startDate: event.eventStartDate,
+    endDate: event.eventEndDate,
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     eventStatus: 'https://schema.org/EventScheduled',
     location: { '@id': `${homepage}#kosh` },

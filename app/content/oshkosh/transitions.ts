@@ -13,7 +13,9 @@ export const transitions: TransitionDefinition[] = [
       'Continue to SW corner Puckaway Lake.',
       'Continue to SW corner Green Lake, then Ripon.'
     ],
-    highVolumeOnly: true
+    highVolumeOnly: true,
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival - Endeavor Bridge Transition' }]
   },
   {
     id: 'puckaway-lake',
@@ -26,7 +28,9 @@ export const transitions: TransitionDefinition[] = [
       'Keep Puckaway shoreline OFF YOUR LEFT.',
       'Continue to SW corner Green Lake.',
       'Then to Ripon, then Fisk via tracks.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival - Puckaway Lake Transition' }]
   },
   {
     id: 'green-lake',
@@ -38,20 +42,24 @@ export const transitions: TransitionDefinition[] = [
       'Cross VPGRN at SW corner Green Lake.',
       'Single file to Ripon (VPRIP).',
       'Then Fisk via railroad tracks.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival - Green Lake Transition' }]
   },
   {
     id: 'ripon',
-    name: 'Ripon (default)',
+    name: 'Ripon',
     startWaypointId: 'vprip',
-    description: 'Default single starting point if no transition assigned. Ripon is about 15 NM SW of OSH.',
-    whenAssigned: 'Always available unless ATC assigns another.',
+    description: 'About 15 NM SW of OSH. Use only when Ripon is the ATC-designated transition starting point.',
+    whenAssigned: 'Use when advertised on Arrival ATIS or updated on Fisk Approach 120.7.',
     steps: [
       'Cross VPRIP at NE corner of Ripon.',
       'Speed/altitude: 90 kt / 1,800 MSL (or 135 / 2,300).',
-      'Find an aircraft of similar speed ahead, sit 0.5 NM in-trail.',
+      'Follow a similar-speed aircraft at least ½ NM in trail.',
       'Follow railroad tracks NE to Fisk.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival - Transitions and Ripon to Fisk' }]
   }
 ]
 

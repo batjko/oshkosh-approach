@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import type * as ReactLeaflet from 'react-leaflet'
 import { MdMyLocation, MdLocationOff, MdMap } from 'react-icons/md'
-import { phaseById, waypoints, waypointById } from '~/content/oshkosh'
-import type { LatLng, PhaseId } from '~/content/oshkosh'
+import { notice, phaseById, waypoints, waypointById } from '~/content/oshkosh'
+import type { LatLng } from '~/content/oshkosh'
 import { useAppStore } from '~/store/useAppStore'
 
 type ReactLeafletModule = typeof ReactLeaflet
@@ -17,48 +17,9 @@ type LeafletModuleWithDefault = LeafletModule & { default?: LeafletModule }
 const positionFor = (id: string): LatLng | null =>
   waypointById(id)?.position ?? null
 
-const definedPositions = (positions: Array<LatLng | null>): LatLng[] =>
-  positions.filter((position): position is LatLng => position !== null)
-
 const resolveLeafletModule = (leafletModule: LeafletModule): LeafletModule => {
   const moduleWithDefault = leafletModule as LeafletModuleWithDefault
   return moduleWithDefault.default ?? leafletModule
-}
-
-const railroadRoute: LatLng[] = definedPositions([
-  positionFor('vprip'),
-  [43.835, -88.78],
-  [43.82, -88.74],
-  [43.8, -88.68],
-  [43.785, -88.62],
-  positionFor('vpfis')
-])
-
-const finalApproachRoute: LatLng[] = definedPositions([
-  positionFor('vpfis'),
-  [43.82, -88.56],
-  [43.9, -88.558],
-  positionFor('kosh')
-])
-
-const phaseFocusWaypointId = (phase: PhaseId): string | null => {
-  switch (phase) {
-    case 'preflight':
-    case 'enroute':
-      return null
-    case 'transition':
-      return 'vprip'
-    case 'ripon-to-fisk':
-      return 'vprip'
-    case 'at-fisk':
-      return 'vpfis'
-    case 'inbound-runway':
-      return 'kosh'
-    case 'ground':
-      return 'kosh'
-    case 'depart':
-      return 'kosh'
-  }
 }
 
 export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
@@ -100,10 +61,8 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
     }
   }, [components])
 
-  const focusId = phaseFocusWaypointId(currentPhase)
-  const focusWaypoint = focusId ? waypointById(focusId) : null
   const center: LatLng =
-    (location ? [location.lat, location.lng] : focusWaypoint?.position) ??
+    (location ? [location.lat, location.lng] : null) ??
     positionFor('kosh') ??
     waypoints[0].position
 
@@ -130,7 +89,7 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
     )
   }
 
-  const { MapContainer, TileLayer, Marker, Popup, Polyline, Circle } = components
+  const { MapContainer, TileLayer, Marker, Popup, Circle } = components
   const phase = phaseById(currentPhase)
   const coarsePointer =
     typeof window.matchMedia === 'function' &&
@@ -150,18 +109,6 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {railroadRoute.length > 1 && (
-          <Polyline
-            positions={railroadRoute}
-            pathOptions={{ color: '#7a5a2c', weight: 3, dashArray: '10, 5' }}
-          />
-        )}
-        {finalApproachRoute.length > 1 && (
-          <Polyline
-            positions={finalApproachRoute}
-            pathOptions={{ color: '#c46a16', weight: 4 }}
-          />
-        )}
         {waypoints.map((wp) => (
           <Marker key={wp.id} position={wp.position}>
             <Popup>
@@ -196,20 +143,16 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
             />
           </>
         )}
-        {focusWaypoint && (
-          <Circle
-            center={focusWaypoint.position}
-            radius={1000}
-            pathOptions={{
-              color: '#4f7a3a',
-              fillColor: '#4f7a3a',
-              fillOpacity: 0.18,
-              weight: 3,
-              dashArray: '5, 5'
-            }}
-          />
-        )}
       </MapContainer>
+
+      <a
+        href={notice.baselineUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="absolute left-3 top-28 z-[500] max-w-[min(70%,24rem)] rounded-cockpit border border-warning/35 bg-base-100/95 px-3 py-2 text-[11px] font-semibold text-warning shadow-cockpit"
+      >
+        Orientation only — not an FAA chart. Open official Notice diagrams.
+      </a>
 
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <div className="pointer-events-auto m-3 self-end rounded-full bg-base-100/90 px-3 py-1.5 text-xs shadow">

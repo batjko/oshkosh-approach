@@ -14,7 +14,9 @@ export const runways: RunwayDefinition[] = [
       'If aircraft <6,250 lb, exit to sod L or R when speed permits.',
       'Do NOT turn back onto the runway.',
       'Use caution for hazards marked with cones and/or flags.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival to OSH RWY 9' }]
   },
   {
     id: 'rwy-27',
@@ -31,7 +33,9 @@ export const runways: RunwayDefinition[] = [
       'Do not cross the shoreline unless cleared.',
       'If <6,250 lb, exit to sod left or right as directed when speed permits.',
       'Do NOT turn back onto the runway; use caution for hazards marked with cones and/or flags.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival to OSH RWY 27' }]
   },
   {
     id: 'rwy-18r',
@@ -50,7 +54,9 @@ export const runways: RunwayDefinition[] = [
       'Relocated threshold beyond concrete edge - REIL + white lines.',
       'Do not land short of the relocated threshold without tower OK.',
       'Notify ATC immediately for a go-around or pattern break.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival to OSH RWY 18R' }]
   },
   {
     id: 'rwy-36l',
@@ -66,7 +72,9 @@ export const runways: RunwayDefinition[] = [
       'If going around, notify ATC immediately and do not continue past the ATC Tower.',
       'If unable to notify ATC, turn right southeast prior to the ATC Tower for resequencing.',
       'Do NOT roll past the Blue Dot without tower authorization.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival to OSH RWY 36L/R' }]
   },
   {
     id: 'rwy-36r',
@@ -84,7 +92,9 @@ export const runways: RunwayDefinition[] = [
       'Expect to land long, roll to end.',
       'Do not turn left unless advised.',
       'If turning left, hold short of 36L until cleared via 126.6 or pink-shirt.'
-    ]
+    ],
+    guidanceType: 'faa-procedure',
+    sourceRefs: [{ sourceId: 'faa-2026-notice', section: 'Fisk VFR Arrival to OSH RWY 36L/R' }]
   }
 ]
 

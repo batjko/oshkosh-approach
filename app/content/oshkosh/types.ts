@@ -15,6 +15,16 @@ export interface SourceRef {
   publishedAt?: string
 }
 
+export type GuidanceType =
+  | 'faa-procedure'
+  | 'official-eaa-logistics'
+  | 'pilot-technique'
+
+export interface OperationalSourceRef {
+  sourceId: SourceRef['id']
+  section: string
+}
+
 /** A named flight phase. Phase IDs are stable; ordering is by `order`. */
 export type PhaseId =
   | 'preflight'
@@ -31,6 +41,8 @@ export interface ChecklistItem {
   text: string
   detail?: string
   required?: boolean
+  guidanceType?: GuidanceType
+  sourceRefs?: OperationalSourceRef[]
 }
 
 export interface PhaseSpeedAltitude {
@@ -51,6 +63,8 @@ export interface PhaseDefinition {
   warnings?: string[]
   speedAltitude?: PhaseSpeedAltitude[]
   sources: SourceRef['id'][]
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface FrequencyEntry {
@@ -78,6 +92,8 @@ export interface TransitionDefinition {
   whenAssigned: string
   steps: string[]
   highVolumeOnly?: boolean
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface HoldDefinition {
@@ -87,6 +103,8 @@ export interface HoldDefinition {
   pattern: string
   exit: string
   altitudeFtMsl?: number
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface AimPoint {
@@ -108,6 +126,8 @@ export interface RunwayDefinition {
   longLanding?: boolean
   aimPoints: AimPoint[]
   rules: string[]
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface DepartureRunway {
@@ -116,6 +136,8 @@ export interface DepartureRunway {
   remainingFt: number
   monitorFreq: string
   notes?: string[]
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface AlternateAirport {
@@ -126,6 +148,10 @@ export interface AlternateAirport {
   hasTower: boolean
   notes?: string[]
   contactPhone?: string
+  contactPurpose?: string
+  referenceUrl: string
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface ParkingSign {
@@ -138,9 +164,11 @@ export interface AircraftProfile {
   id: string
   label: string
   description: string
-  arrivalRoute: 'fisk' | 'fond-du-lac' | 'transient-helicopter' | 'ultralight' | 'seaplane' | 'nordo'
-  recommendedSpeedAlt: PhaseSpeedAltitude
+  arrivalRoute: 'fisk' | 'fond-du-lac' | 'transient-helicopter' | 'ultralight' | 'seaplane' | 'amphibian-fisk' | 'nordo'
+  recommendedSpeedAlt?: PhaseSpeedAltitude
   notes: string[]
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface DivertTrigger {
@@ -148,6 +176,8 @@ export interface DivertTrigger {
   trigger: string
   action: string
   severity: 'caution' | 'critical'
+  guidanceType: GuidanceType
+  sourceRefs: OperationalSourceRef[]
 }
 
 export interface NoticeMetadata {
@@ -164,14 +194,15 @@ export interface NoticeMetadata {
 }
 
 export interface EventFacts {
-  startDate: string
-  endDate: string
+  eventStartDate: string
+  eventEndDate: string
+  procedureStart: string
+  procedureEnd: string
   procedureEffectiveWindow: string
   airportIcao: string
   airportName: string
   fieldElevationFt: number
   dailyAirportClosure: string
   airshowWindows: string[]
-  smsStatusInstructions: string
   notes: string[]
 }

@@ -147,7 +147,13 @@ export const StatusBar = () => {
               )}
               <span className="inline-flex items-center gap-1 text-[11px] text-base-content/60">
                 <MdEvent className="h-3 w-3" />
-                {event.startDate.slice(5)} - {event.endDate.slice(5)}
+                Event {event.eventStartDate.slice(5)} - {event.eventEndDate.slice(5)}
+              </span>
+              <span
+                className="inline-flex items-center text-[11px] text-base-content/60"
+                title={event.procedureEffectiveWindow}
+              >
+                Procedures 07-16 noon - 07-27 noon CDT
               </span>
             </span>
           </div>

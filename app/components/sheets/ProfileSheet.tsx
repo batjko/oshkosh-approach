@@ -59,6 +59,9 @@ export const ProfileSheet = () => {
                 <li key={note}>{note}</li>
               ))}
             </ul>
+            <p className="mt-2 text-[11px] text-base-content/55">
+              FAA Notice: {activeProfile.sourceRefs.map((ref) => ref.section).join('; ')}
+            </p>
           </section>
         )}
       </div>

@@ -1,7 +1,7 @@
 import type { FrequencyEntry } from './types'
 
 export const frequencies: FrequencyEntry[] = [
-  { id: 'arrival-atis', label: 'Arrival ATIS', freq: '125.9', category: 'arrival', notes: 'Tune at 60 NM in COM2.' },
+  { id: 'arrival-atis', label: 'Arrival ATIS', freq: '125.9', category: 'arrival', notes: 'Monitor no later than 60 NM.' },
   { id: 'fisk-approach', label: 'Fisk Approach', freq: '120.7', category: 'arrival', notes: 'Listen-only unless ATC speaks to you.' },
   { id: 'osh-tower-north', label: 'OSH Tower (RWY 9/27)', freq: '118.5', category: 'tower' },
   { id: 'osh-tower-south', label: 'OSH Tower (RWY 18/36)', freq: '126.6', category: 'tower' },

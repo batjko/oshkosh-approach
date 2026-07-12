@@ -25,7 +25,7 @@ const phaseCue: Record<
     frequencyId: 'fisk-approach'
   },
   'ripon-to-fisk': {
-    cue: 'Tracks NE. Sterile cockpit. 0.5 NM in-trail.',
+    cue: 'Tracks NE. Sterile cockpit. At least ½ NM in trail.',
     frequencyId: 'fisk-approach'
   },
   'at-fisk': {
@@ -33,9 +33,9 @@ const phaseCue: Record<
     frequencyId: 'fisk-approach'
   },
   'inbound-runway': {
-    cue: 'Land on the assigned dot. Short approach.'
+    cue: 'Use the touchdown point assigned by ATC.'
   },
-  ground: { cue: 'Exit, stop on grass. Sign on LEFT windshield.' },
+  ground: { cue: 'Exit as directed. Sign LEFT. Follow EAA flagpersons.' },
   depart: {
     cue: 'Departure ATIS 121.75. Display departure sign.',
     frequencyId: 'departure-atis'

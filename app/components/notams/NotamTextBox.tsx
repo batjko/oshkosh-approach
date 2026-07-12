@@ -137,7 +137,6 @@ const retryLabelFor = (status: TranslationStatus): string => {
 }
 
 export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
-  const containerRef = useRef<HTMLDivElement | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const mountedRef = useRef(true)
   const [status, setStatus] = useState<TranslationStatus>(
@@ -146,7 +145,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
   const [translation, setTranslation] = useState<TranslationValue | null>(
     notam.cachedTranslation ?? null
   )
-  const [showTranslation, setShowTranslation] = useState(Boolean(notam.cachedTranslation))
+  const [showTranslation, setShowTranslation] = useState(false)
   const [requested, setRequested] = useState(Boolean(notam.cachedTranslation))
   const [retryAfter, setRetryAfter] = useState(0)
   const [now, setNow] = useState(() => Date.now())
@@ -223,7 +222,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
     abortRef.current?.abort()
     setStatus(notam.cachedTranslation ? 'ready' : 'idle')
     setTranslation(notam.cachedTranslation ?? null)
-    setShowTranslation(Boolean(notam.cachedTranslation))
+    setShowTranslation(false)
     setRequested(Boolean(notam.cachedTranslation))
     setRetryAfter(0)
     setIsFresh(false)
@@ -245,29 +244,6 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
     }, retryAfter - now)
     return () => window.clearTimeout(timeoutId)
   }, [now, retryAfter])
-
-  useEffect(() => {
-    const node = containerRef.current
-    if (!node || requested) return
-
-    if (!('IntersectionObserver' in window)) {
-      requestTranslation()
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          requestTranslation()
-          observer.disconnect()
-        }
-      },
-      { rootMargin: '160px' }
-    )
-
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [requestTranslation, requested])
 
   const showErrorState =
     status === 'timeout' ||
@@ -294,7 +270,6 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
 
   return (
     <div
-      ref={containerRef}
       className="relative w-full rounded-lg border border-base-300 bg-base-100"
     >
       {showTranslation && translation && (
@@ -305,7 +280,7 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
       )}
       <button
         type="button"
-        className="btn btn-circle btn-ghost absolute right-1 top-1 z-10 h-11 min-h-11 w-11 bg-base-100/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="btn btn-ghost btn-sm absolute right-1 top-1 z-10 min-h-10 gap-1 bg-base-100/90 px-2 text-[11px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         onClick={handleButtonClick}
         disabled={
           status === 'loading' ||
@@ -318,31 +293,35 @@ export const NotamTextBox = ({ notam }: NotamTextBoxProps) => {
       >
         {status === 'loading' || status === 'pending'
           ? <MdHourglassEmpty className="h-3.5 w-3.5 animate-pulse motion-reduce:animate-none" />
-          : status === 'ready'
-            ? showTranslation
-              ? <MdCode className="h-3.5 w-3.5" />
-              : <MdTextSnippet className="h-3.5 w-3.5" />
+          : status === 'ready' && showTranslation
+            ? <MdCode className="h-3.5 w-3.5" />
             : showErrorState
               ? <MdRefresh className="h-3.5 w-3.5" />
               : <MdTextSnippet className="h-3.5 w-3.5" />}
+        <span>{buttonLabel}</span>
       </button>
 
       <div
         className={[
-          'max-h-[22rem] overflow-y-auto overscroll-contain p-3 pr-14 sm:max-h-[26rem] lg:max-h-[30rem]',
-          showTranslation && translation ? 'pl-8' : ''
+          'max-h-[22rem] overflow-y-auto overscroll-contain p-3 pr-36 pt-12 sm:max-h-[26rem] lg:max-h-[30rem]',
+          showTranslation && translation ? 'pl-3' : ''
         ].join(' ')}
       >
         {showTranslation && translation
           ? (
-            <div
-              className={[
-                'space-y-2 text-sm leading-relaxed text-base-content transition-opacity duration-300 motion-reduce:transition-none',
-                isFresh ? 'opacity-80' : 'opacity-100',
-                '[&_h4]:mt-2 [&_h4]:font-semibold [&_ol>li]:ml-4 [&_ol>li]:list-decimal [&_p]:mb-2 [&_ul>li]:ml-4 [&_ul>li]:list-disc'
-              ].join(' ')}
-              dangerouslySetInnerHTML={{ __html: translation.html }}
-            />
+            <div>
+              <div className="mb-3 rounded-md border border-warning/40 bg-warning/10 px-2.5 py-2 text-xs font-semibold text-warning">
+                AI-generated explanation — verify against the raw FAA NOTAM.
+              </div>
+              <div
+                className={[
+                  'space-y-2 text-sm leading-relaxed text-base-content transition-opacity duration-300 motion-reduce:transition-none',
+                  isFresh ? 'opacity-80' : 'opacity-100',
+                  '[&_h4]:mt-2 [&_h4]:font-semibold [&_ol>li]:ml-4 [&_ol>li]:list-decimal [&_p]:mb-2 [&_ul>li]:ml-4 [&_ul>li]:list-disc'
+                ].join(' ')}
+                dangerouslySetInnerHTML={{ __html: translation.html }}
+              />
+            </div>
             )
           : (
             <div

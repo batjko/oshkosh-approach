@@ -1,14 +1,13 @@
 import { MdFlight, MdMenuBook, MdLock } from 'react-icons/md'
 import { useAppStore } from '~/store/useAppStore'
-import { isFlightDayUnlocked, notice } from '~/content/oshkosh'
+import { canUseFlightMode, notice } from '~/content/oshkosh'
 import { trackAppEvent } from '~/utils/analytics'
 
 export const ModeToggle = () => {
   const mode = useAppStore((s) => s.mode)
   const setMode = useAppStore((s) => s.setMode)
   const acknowledged = useAppStore((s) => s.noticeYearAcknowledged)
-  const inFlightAllowed =
-    isFlightDayUnlocked() || acknowledged === notice.requiredYear
+  const inFlightAllowed = canUseFlightMode(acknowledged)
 
   const onInFlightClick = () => {
     if (inFlightAllowed) {

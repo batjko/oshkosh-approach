@@ -5,7 +5,12 @@
  */
 export * from './types'
 export { sources, sourceList } from './sources'
-export { notice, event, isFlightDayUnlocked } from './notice'
+export {
+  notice,
+  event,
+  isNoticeContentCurrent,
+  canUseFlightMode
+} from './notice'
 export { frequencies, frequencyById, headerFrequencyIds } from './frequencies'
 export { waypoints, waypointById } from './waypoints'
 export { transitions, transitionById } from './transitions'

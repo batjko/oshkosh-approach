@@ -75,6 +75,13 @@ export const Checklist = ({
                   <MdStarBorder className="h-3 w-3" /> required
                 </span>
               )}
+              {item.guidanceType && item.guidanceType !== 'faa-procedure' && (
+                <span className="shrink-0 rounded-full border border-base-300 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-base-content/60">
+                  {item.guidanceType === 'official-eaa-logistics'
+                    ? 'EAA logistics'
+                    : 'Pilot technique'}
+                </span>
+              )}
             </button>
           </li>
         )

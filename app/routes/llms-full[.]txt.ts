@@ -56,6 +56,7 @@ const buildLlmsFullBody = (): string => {
   lines.push('## Event')
   lines.push('')
   lines.push(`- Name: EAA AirVenture Oshkosh`)
+  lines.push(`- Event dates: ${event.eventStartDate} through ${event.eventEndDate}`)
   lines.push(`- Special flight procedures: ${event.procedureEffectiveWindow}`)
   lines.push(
     `- Airport: ${event.airportName} (${event.airportIcao}), ` +

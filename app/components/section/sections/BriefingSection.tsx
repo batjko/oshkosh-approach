@@ -9,6 +9,7 @@ import {
   holdHighSpeedKt,
   holdSaturationGuidance,
   holdSpeedKt,
+  sources,
   type PhaseDefinition
 } from '~/content/oshkosh'
 import { Checklist } from '~/components/checklist/Checklist'
@@ -114,10 +115,18 @@ export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
       <p className="text-base text-base-content">{phase.summary}</p>
 
       <section className="rounded-cockpit bg-base-200 p-3">
-        <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-base-content/60">
-          <MdInfoOutline className="h-4 w-4 text-primary" /> Briefing
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-base-content/60">
+            <MdInfoOutline className="h-4 w-4 text-primary" /> Briefing
+          </h3>
+          <span className="rounded-full border border-primary/25 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+            FAA procedure
+          </span>
+        </div>
         <p className="mt-2 text-sm leading-relaxed">{phase.briefing}</p>
+        <p className="mt-2 text-[11px] text-base-content/55">
+          Source: {phase.sourceRefs.map((ref) => ref.section).join('; ')}
+        </p>
       </section>
 
       {phase.warnings && phase.warnings.length > 0 && (
@@ -149,6 +158,18 @@ export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
             trackingKey="secondary"
           />
         </section>
+      )}
+
+      {phase.id === 'preflight' && (
+        <a
+          href={sources['eaa-mass-arrivals'].url}
+          target="_blank"
+          rel="noreferrer"
+          className="btn btn-outline tap-target w-full justify-between text-left sm:w-auto"
+        >
+          Live EAA mass-arrival schedule
+          <span aria-hidden="true">↗</span>
+        </a>
       )}
 
       {showHolds && <HoldsSubBlock />}

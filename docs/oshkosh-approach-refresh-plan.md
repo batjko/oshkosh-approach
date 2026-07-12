@@ -1,5 +1,9 @@
 # EAA Airventure Oshkosh Approach App: Review and Modernization Plan
 
+> Historical document. Its moving-map geofencing and automatic-stage-transition
+> proposals are superseded. Production GPS is display-only and phases change
+> only through explicit pilot action.
+
 ## 1. Project Overview
 
 The Oshkosh Approach App is a single-page application designed to assist general aviation pilots in navigating the complex VFR arrival procedure for EAA Airventure in Oshkosh, Wisconsin. The application provides a step-by-step guide through the Fisk approach, displays current NOTAMs, and offers essential information for a safe arrival.

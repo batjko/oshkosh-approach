@@ -49,7 +49,7 @@ export const DivertSheet = () => (
           {alternates.map((alt) => (
             <li key={alt.id}>
               <a
-                href={`https://www.google.com/maps/search/${alt.icao}`}
+                href={alt.referenceUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="tap-target flex items-center justify-between gap-2 rounded-cockpit border border-base-300 bg-base-100 p-3 transition hover:bg-base-200"

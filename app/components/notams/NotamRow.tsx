@@ -32,7 +32,7 @@ export const NotamRow = ({ notam, formatEffectiveEnd }: NotamRowProps) => {
   return (
     <tr className={priority.level === 'critical' ? 'bg-error/10' : ''}>
       <td>
-        <div className="tooltip" data-tip={`Priority: ${priority.level}`}>
+        <div className="tooltip" data-tip={`App keyword scan: ${priority.level}`}>
           {getPriorityIcon(priority)}
         </div>
       </td>
