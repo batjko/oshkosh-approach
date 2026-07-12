@@ -163,7 +163,7 @@ override.
 
 ## PWA / Service worker
 
-`public/service-worker.js` (cache version **v4**) registers from
+`public/service-worker.js` (cache version **v5**) registers from
 `routes/_index.tsx`. Strategy:
 
 - **Navigation requests** use `cache: 'no-store'` and only an offline

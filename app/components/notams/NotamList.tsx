@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import {
   MdFilterList,
   MdClear,
@@ -128,7 +128,20 @@ export const NotamList = ({
   const [selectedType, setSelectedType] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortByPriority, setSortByPriority] = useState(true)
+  const [online, setOnline] = useState(true)
   const useDesktopLayout = useDesktopNotamLayout()
+
+  useEffect(() => {
+    const handleOnline = () => setOnline(true)
+    const handleOffline = () => setOnline(false)
+    setOnline(navigator.onLine)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   let filteredNotams = filterNotamsByType(notamList, selectedType)
   filteredNotams = filterNotamsBySearch(filteredNotams, searchTerm)
@@ -152,7 +165,7 @@ export const NotamList = ({
         <header className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="card-title flex items-center gap-2">
             <MdWarning className="text-warning" />
-            Current NOTAMs ({filteredNotams.length})
+            {online ? 'Current NOTAMs' : 'Last-known NOTAMs'} ({filteredNotams.length})
           </h2>
           <div className="flex flex-col items-start gap-1 text-xs text-base-content/70 sm:items-end">
             <span>
@@ -190,6 +203,18 @@ export const NotamList = ({
                   notams.aim.faa.gov
                 </a>{' '}
                 before flight.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!online && !fetchError && (
+          <div className="alert alert-warning mb-4">
+            <MdWarning className="h-5 w-5" />
+            <div>
+              <div className="font-semibold">Offline — NOTAMs may be stale</div>
+              <div className="text-xs opacity-80">
+                Last queried {formatFetchedAt(fetchedAt)}. Confirm current FAA NOTAMs before flight.
               </div>
             </div>
           </div>

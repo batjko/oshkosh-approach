@@ -74,22 +74,49 @@ export interface NotamFetchResult {
 }
 
 /**
- * Parse FAA-format dates: `MM/DD/YYYY HHmm` (Zulu) or the literal `'PERM'`.
+ * Parse FAA-format dates: `MM/DD/YYYY HHmm`, optionally followed by an
+ * `EST`/`EDT` suffix, or the literal `'PERM'`.
  * Returns ISO-8601 string or `'PERM'`.
  */
-const parseFaaDate = (raw?: string): string => {
+export const parseFaaDate = (raw?: string): string => {
   if (!raw) return ''
   const trimmed = raw.trim()
   if (trimmed.toUpperCase() === 'PERM') return 'PERM'
 
-  const m = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})(\d{2})$/)
+  const m = trimmed.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2})(\d{2})(EST|EDT)?(?:\s+\(UTC\))?$/i
+  )
   if (m) {
-    const [, mm, dd, yyyy, hh, min] = m
-    return `${yyyy}-${mm}-${dd}T${hh}:${min}:00Z`
+    const [, mm, dd, yyyy, hh, min, zone] = m
+    const offsetHours = zone?.toUpperCase() === 'EST'
+      ? 5
+      : zone?.toUpperCase() === 'EDT'
+        ? 4
+        : 0
+    const year = Number(yyyy)
+    const month = Number(mm) - 1
+    const day = Number(dd)
+    const hours = Number(hh)
+    const minutes = Number(min)
+    const baseDate = new Date(Date.UTC(
+      year,
+      month,
+      day,
+      hours,
+      minutes
+    ))
+    if (
+      baseDate.getUTCFullYear() !== year ||
+      baseDate.getUTCMonth() !== month ||
+      baseDate.getUTCDate() !== day ||
+      baseDate.getUTCHours() !== hours ||
+      baseDate.getUTCMinutes() !== minutes
+    ) return ''
+
+    const date = new Date(baseDate.getTime() + offsetHours * 60 * 60 * 1000)
+    return date.toISOString()
   }
-  // Defensive: fall back to Date parser, drop on failure.
-  const parsed = new Date(trimmed)
-  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString()
+  return ''
 }
 
 const isCurrentlyActive = (notam: TransformedNotam, now: Date): boolean => {

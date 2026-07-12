@@ -7,6 +7,27 @@ import { renderToPipeableStream } from "react-dom/server";
 
 const ABORT_DELAY = 5_000;
 
+const applySecurityHeaders = (headers: Headers): void => {
+  headers.set('Content-Security-Policy', [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "img-src 'self' data: https:",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "script-src 'self' 'unsafe-inline' https://*.posthog.com https://*.i.posthog.com",
+    "connect-src 'self' https://*.posthog.com https://*.i.posthog.com",
+    "worker-src 'self'",
+    "manifest-src 'self'",
+  ].join('; '));
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
+  headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+};
+
 export default function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -14,6 +35,7 @@ export default function handleRequest(
   remixContext: EntryContext,
   // loadContext: AppLoadContext
 ) {
+  applySecurityHeaders(responseHeaders);
   return isbot(request.headers.get("user-agent") || "")
     ? handleBotRequest(
         request,
