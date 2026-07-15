@@ -1,7 +1,6 @@
 import { MdFlight, MdMenuBook, MdLock } from 'react-icons/md'
 import { useAppStore } from '~/store/useAppStore'
 import { canUseFlightMode, notice } from '~/content/oshkosh'
-import { trackAppEvent } from '~/utils/analytics'
 
 export const ModeToggle = () => {
   const mode = useAppStore((s) => s.mode)
@@ -10,14 +9,7 @@ export const ModeToggle = () => {
   const inFlightAllowed = canUseFlightMode(acknowledged)
 
   const onInFlightClick = () => {
-    if (inFlightAllowed) {
-      setMode('in-flight')
-    } else {
-      trackAppEvent('mode changed', {
-        mode: 'in-flight',
-        reason: 'blocked_notice'
-      })
-    }
+    setMode('in-flight')
   }
 
   return (

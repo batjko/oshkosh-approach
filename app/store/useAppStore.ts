@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import {
+  canUseFlightMode,
   firstPhase,
   lastPhase,
   phases,
@@ -49,6 +50,7 @@ export interface CurrentLocation {
   lat: number
   lng: number
   accuracy: number
+  timestamp: number
 }
 
 export interface AircraftIdentity {
@@ -229,7 +231,12 @@ export const useAppStore = create<AppState>()(
       },
 
       setMode: (mode) => {
-        if (get().mode === mode) return
+        const state = get()
+        if (mode === 'in-flight' && !canUseFlightMode(state.noticeYearAcknowledged)) {
+          trackAppEvent('mode changed', { mode, reason: 'blocked_notice' })
+          return
+        }
+        if (state.mode === mode) return
         set({ mode })
         trackAppEvent('mode changed', { mode, reason: 'allowed' })
       },
@@ -254,7 +261,17 @@ export const useAppStore = create<AppState>()(
         trackAppEvent('map toggled', { enabled: enable })
       },
 
-      setNoticeYearAcknowledged: (year) => set({ noticeYearAcknowledged: year }),
+      setNoticeYearAcknowledged: (year) => {
+        const state = get()
+        const mode = canUseFlightMode(year) ? state.mode : 'pre-flight'
+        set({ noticeYearAcknowledged: year, mode })
+        if (mode !== state.mode) {
+          trackAppEvent('mode changed', {
+            mode,
+            reason: 'blocked_notice'
+          })
+        }
+      },
 
       setAircraftProfileId: (id) => {
         if (get().aircraftProfileId === id) return
@@ -296,7 +313,8 @@ export const useAppStore = create<AppState>()(
       resetOnboarding: () =>
         set({
           onboardingComplete: false,
-          noticeYearAcknowledged: null
+          noticeYearAcknowledged: null,
+          mode: 'pre-flight'
         }),
 
       setActiveSection: (section) => {
@@ -359,7 +377,16 @@ export const useAppStore = create<AppState>()(
       }),
       skipHydration: true,
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true)
+        if (!state) return
+        const currentPhase = phaseById(state.currentPhase)?.id ?? firstPhase.id
+        useAppStore.setState({
+          currentPhase,
+          mode: canUseFlightMode(state.noticeYearAcknowledged)
+            ? state.mode
+            : 'pre-flight',
+          activeSection: defaultSectionForPhase(currentPhase),
+          hasHydrated: true
+        })
       }
     }
   )

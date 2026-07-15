@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import {
   MdShield,
   MdFlight,
@@ -12,23 +11,9 @@ import {
   event,
   notice
 } from '~/content/oshkosh'
+import { useOriginReachability } from '~/hooks/useOriginReachability'
 import { useAppStore } from '~/store/useAppStore'
-
-const useOnline = () => {
-  const [online, setOnline] = useState(true)
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    setOnline(navigator.onLine)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => {
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', off)
-    }
-  }, [])
-  return online
-}
+import { isGpsFixLowAccuracy } from '~/utils/gps'
 
 interface PillButtonProps {
   onClick?: () => void
@@ -83,10 +68,11 @@ export const StatusBar = () => {
   const setGpsEnabled = useAppStore((s) => s.setGpsEnabled)
   const location = useAppStore((s) => s.currentLocation)
   const openSheet = useAppStore((s) => s.openSheetAction)
-  const online = useOnline()
+  const online = useOriginReachability()
 
   const noticeOk = acknowledged === notice.requiredYear
   const profile = aircraftProfiles.find((p) => p.id === profileId)
+  const lowAccuracy = location ? isGpsFixLowAccuracy(location) : false
 
   return (
     <div className="border-b border-base-300 bg-base-200/80 backdrop-blur">
@@ -113,11 +99,14 @@ export const StatusBar = () => {
             />
             <PillButton
               onClick={() => setGpsEnabled(!gpsEnabled)}
-              active={!!location}
+              active={!!location && !lowAccuracy}
+              warn={lowAccuracy}
               ariaLabel={
                 gpsEnabled
                   ? location
-                    ? 'GPS active. Tap to disable.'
+                    ? lowAccuracy
+                      ? 'GPS fix has low accuracy. Tap to disable.'
+                      : 'GPS active. Tap to disable.'
                     : 'GPS waiting for fix. Tap to disable.'
                   : 'Use GPS. Tap to enable geolocation.'
               }
@@ -131,7 +120,9 @@ export const StatusBar = () => {
               label={
                 gpsEnabled
                   ? location
-                    ? 'GPS'
+                    ? lowAccuracy
+                      ? 'GPS low accuracy'
+                      : 'GPS'
                     : 'GPS waiting'
                   : 'Use GPS'
               }
@@ -142,7 +133,7 @@ export const StatusBar = () => {
             <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 max-[430px]:pr-2">
               {!online && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning">
-                  <MdCloudOff className="h-3 w-3" /> Offline
+                  <MdCloudOff className="h-3 w-3" /> App offline
                 </span>
               )}
               <span className="inline-flex items-center gap-1 text-[11px] text-base-content/60">

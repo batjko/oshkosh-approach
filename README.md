@@ -163,13 +163,14 @@ override.
 
 ## PWA / Service worker
 
-`public/service-worker.js` (cache version **v5**) registers from
+`public/service-worker.js` (cache version **v6**) registers from
 `routes/_index.tsx`. Strategy:
 
 - **Navigation requests** use `cache: 'no-store'` and only an offline
   fallback HTML blob is cached. Network-first, falling back to the
   blob when offline.
-- **Static assets** are cache-first against versioned caches.
+- **Static assets** are cache-first against versioned caches, using exact
+  public paths or the same-origin `/assets/` build path.
 - Bump *every* `v\d+` token in `service-worker.js` together when you
   change SW behaviour, otherwise clients can end up with a mix of
   cache versions.

@@ -205,7 +205,7 @@ belong in PostHog *events*, not logs.
 
 ## Service worker
 
-[`public/service-worker.js`](../public/service-worker.js) v4.
+[`public/service-worker.js`](../public/service-worker.js) v6.
 
 - **Install** caches `STATIC_ASSETS = ['/', '/manifest.json',
   '/favicon.ico']`.

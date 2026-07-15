@@ -65,4 +65,17 @@ describe('safety copy contracts', () => {
     expect(list).toContain('keyword-based scan aid')
     expect(banner).toContain('Potentially critical — keyword match')
   })
+
+  it('does not let the root static asset match every GET request', () => {
+    const worker = read('public/service-worker.js')
+    expect(worker).not.toContain('request.url.includes(asset)')
+    expect(worker).toContain('STATIC_ASSETS.includes(url.pathname)')
+    expect(worker.match(/eaa-approach(?:-static|-dynamic)?-v6/g)).toHaveLength(3)
+  })
+
+  it('probes the origin outside the service worker GET cache', () => {
+    const hook = read('app/hooks/useOriginReachability.ts')
+    expect(hook).toContain("method: 'HEAD'")
+    expect(hook).toContain("cache: 'no-store'")
+  })
 })

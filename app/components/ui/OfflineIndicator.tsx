@@ -1,22 +1,8 @@
-import { useState, useEffect } from 'react'
 import { MdWifiOff } from 'react-icons/md'
+import { useOriginReachability } from '~/hooks/useOriginReachability'
 
 export const OfflineIndicator = () => {
-  const [isOnline, setIsOnline] = useState(true)
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-    setIsOnline(navigator.onLine)
-
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
+  const isOnline = useOriginReachability()
 
   if (isOnline) return null
 
@@ -25,8 +11,8 @@ export const OfflineIndicator = () => {
       <div className="alert alert-warning shadow-lg max-w-sm">
         <MdWifiOff className="h-6 w-6" />
         <div>
-          <h3 className="font-bold">Offline Mode</h3>
-          <div className="text-xs">Using cached data</div>
+          <h3 className="font-bold">App connection unavailable</h3>
+          <div className="text-xs">Using cached app data</div>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useAppStore } from '~/store/useAppStore'
 import { showNotification } from '~/components/ui/ErrorNotification'
+import { gpsFixExpiresIn } from '~/utils/gps'
 
 /**
  * Watches geolocation when the user has explicitly opted in via the
@@ -29,16 +30,34 @@ export const useGeolocation = () => {
       return
     }
 
+    let staleTimer: number | null = null
+    const clearStaleTimer = () => {
+      if (staleTimer !== null) window.clearTimeout(staleTimer)
+      staleTimer = null
+    }
+
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
+        clearStaleTimer()
         const next = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-          accuracy: position.coords.accuracy
+          accuracy: position.coords.accuracy,
+          timestamp: position.timestamp || Date.now()
+        }
+        const expiresIn = gpsFixExpiresIn(next.timestamp)
+        if (expiresIn === 0) {
+          setCurrentLocation(null)
+          return
         }
         setCurrentLocation(next)
+        staleTimer = window.setTimeout(() => {
+          setCurrentLocation(null)
+          staleTimer = null
+        }, expiresIn)
       },
       (error) => {
+        clearStaleTimer()
         setCurrentLocation(null)
         if (error.code === error.PERMISSION_DENIED) {
           showNotification({
@@ -70,7 +89,10 @@ export const useGeolocation = () => {
       }
     )
 
-    return () => navigator.geolocation.clearWatch(watchId)
+    return () => {
+      clearStaleTimer()
+      navigator.geolocation.clearWatch(watchId)
+    }
   }, [
     gpsEnabled,
     setCurrentLocation,

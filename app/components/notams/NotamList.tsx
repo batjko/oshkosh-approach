@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import {
   MdFilterList,
   MdClear,
@@ -14,6 +14,7 @@ import {
 } from '~/utils/notamFilters'
 import { NOTAM_TYPE_FILTERS } from '~/utils/notamTypes'
 import { clientLogger } from '~/lib/clientLogger'
+import { useOriginReachability } from '~/hooks/useOriginReachability'
 import { NotamRow } from './NotamRow'
 import { NotamTextBox } from './NotamTextBox'
 import { NotamTypeBadge } from './NotamTypeBadge'
@@ -128,20 +129,8 @@ export const NotamList = ({
   const [selectedType, setSelectedType] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortByPriority, setSortByPriority] = useState(true)
-  const [online, setOnline] = useState(true)
+  const online = useOriginReachability()
   const useDesktopLayout = useDesktopNotamLayout()
-
-  useEffect(() => {
-    const handleOnline = () => setOnline(true)
-    const handleOffline = () => setOnline(false)
-    setOnline(navigator.onLine)
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
 
   let filteredNotams = filterNotamsByType(notamList, selectedType)
   filteredNotams = filterNotamsBySearch(filteredNotams, searchTerm)
@@ -222,7 +211,7 @@ export const NotamList = ({
           <div className="alert alert-warning mb-4">
             <MdWarning className="h-5 w-5" />
             <div>
-              <div className="font-semibold">Offline — NOTAMs may be stale</div>
+              <div className="font-semibold">Connection unavailable — NOTAMs may be stale</div>
               <div className="text-xs opacity-80">
                 Last queried {formatFetchedAt(fetchedAt)}. Confirm current FAA NOTAMs before flight.
               </div>

@@ -4,6 +4,7 @@ import { MdMyLocation, MdLocationOff, MdMap } from 'react-icons/md'
 import { notice, phaseById, waypoints, waypointById } from '~/content/oshkosh'
 import type { LatLng } from '~/content/oshkosh'
 import { useAppStore } from '~/store/useAppStore'
+import { isGpsFixLowAccuracy } from '~/utils/gps'
 
 type ReactLeafletModule = typeof ReactLeaflet
 
@@ -13,6 +14,7 @@ interface ApproachMapProps {
 
 type LeafletModule = typeof import('leaflet')
 type LeafletModuleWithDefault = LeafletModule & { default?: LeafletModule }
+type LeafletMap = import('leaflet').Map
 
 const positionFor = (id: string): LatLng | null =>
   waypointById(id)?.position ?? null
@@ -26,6 +28,7 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
   const location = useAppStore((s) => s.currentLocation)
   const currentPhase = useAppStore((s) => s.currentPhase)
   const [components, setComponents] = useState<ReactLeafletModule | null>(null)
+  const [map, setMap] = useState<LeafletMap | null>(null)
   const [error, setError] = useState(false)
 
   useEffect(() => {
@@ -61,6 +64,14 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
     }
   }, [components])
 
+  useEffect(() => {
+    if (!map || !location) return
+    const position: LatLng = [location.lat, location.lng]
+    if (!map.getBounds().contains(position)) {
+      map.panTo(position, { animate: false })
+    }
+  }, [location, map])
+
   const center: LatLng =
     (location ? [location.lat, location.lng] : null) ??
     positionFor('kosh') ??
@@ -91,18 +102,17 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
 
   const { MapContainer, TileLayer, Marker, Popup, Circle } = components
   const phase = phaseById(currentPhase)
-  const coarsePointer =
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(pointer: coarse)').matches
+  const lowAccuracy = location ? isGpsFixLowAccuracy(location) : false
 
   return (
     <div className={`relative h-full w-full ${className}`}>
       <MapContainer
+        ref={setMap}
         center={center}
         zoom={11}
-        dragging={!coarsePointer}
+        dragging
         scrollWheelZoom={false}
-        touchZoom={!coarsePointer}
+        touchZoom
         style={{ height: '100%', width: '100%', minHeight: 280 }}
       >
         <TileLayer
@@ -157,8 +167,9 @@ export const ApproachMap = ({ className = '' }: ApproachMapProps) => {
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <div className="pointer-events-auto m-3 self-end rounded-full bg-base-100/90 px-3 py-1.5 text-xs shadow">
           {location ? (
-            <span className="inline-flex items-center gap-1 text-success">
-              <MdMyLocation className="h-3.5 w-3.5" /> GPS
+            <span className={`inline-flex items-center gap-1 ${lowAccuracy ? 'text-warning' : 'text-success'}`}>
+              <MdMyLocation className="h-3.5 w-3.5" />
+              {lowAccuracy ? 'GPS low accuracy' : 'GPS'}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 text-base-content/60">

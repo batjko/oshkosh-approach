@@ -1,6 +1,6 @@
-const CACHE_NAME = 'eaa-approach-v5';
-const STATIC_CACHE_NAME = 'eaa-approach-static-v5';
-const DYNAMIC_CACHE_NAME = 'eaa-approach-dynamic-v5';
+const CACHE_NAME = 'eaa-approach-v6';
+const STATIC_CACHE_NAME = 'eaa-approach-static-v6';
+const DYNAMIC_CACHE_NAME = 'eaa-approach-dynamic-v6';
 
 // Essential assets that should always be cached. Pre-caching the PWA
 // icon set lets a freshly-installed home-screen launch render correctly
@@ -93,7 +93,10 @@ self.addEventListener('fetch', (event) => {
       );
     }
     // Handle static assets
-    else if (STATIC_ASSETS.some(asset => request.url.includes(asset))) {
+    else if (
+      url.origin === self.location.origin &&
+      (STATIC_ASSETS.includes(url.pathname) || url.pathname.startsWith('/assets/'))
+    ) {
       event.respondWith(
         caches.match(request).then((cachedResponse) => {
           return cachedResponse || fetch(request).then((response) => {

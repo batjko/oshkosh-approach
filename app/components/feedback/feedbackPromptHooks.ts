@@ -1,28 +1,13 @@
 import { useEffect, useState } from 'react'
 
+import { useOriginReachability } from '~/hooks/useOriginReachability'
 import { isAnalyticsDisabled, isAnalyticsReady } from '~/utils/analytics'
 
 const ANALYTICS_READY_POLL_MS = 250
 
 export type AnalyticsStatus = 'loading' | 'ready' | 'disabled'
 
-export const useOnline = () => {
-  const [online, setOnline] = useState(true)
-
-  useEffect(() => {
-    const on = () => setOnline(true)
-    const off = () => setOnline(false)
-    setOnline(navigator.onLine)
-    window.addEventListener('online', on)
-    window.addEventListener('offline', off)
-    return () => {
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', off)
-    }
-  }, [])
-
-  return online
-}
+export const useOnline = useOriginReachability
 
 export const useAnalyticsStatus = (): AnalyticsStatus => {
   const [status, setStatus] = useState<AnalyticsStatus>(() => {
