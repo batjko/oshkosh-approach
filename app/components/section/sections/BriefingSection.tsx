@@ -1,4 +1,5 @@
-import { MdInfoOutline, MdWarningAmber } from 'react-icons/md'
+import { useEffect, useState } from 'react'
+import { MdClose, MdInfoOutline, MdWarningAmber } from 'react-icons/md'
 import {
   departureRunways,
   departureSafetyNotes,
@@ -13,11 +14,54 @@ import {
   type PhaseDefinition
 } from '~/content/oshkosh'
 import { Checklist } from '~/components/checklist/Checklist'
+import { useAppStore } from '~/store/useAppStore'
+import { consumeOnboardingHandoff } from '~/utils/onboardingHandoff'
 
 interface BriefingSectionProps {
   phase: PhaseDefinition
   /** Whether to inline the holds sub-block (transition / ripon-to-fisk). */
   showHolds?: boolean
+}
+
+const HANDOFF_CUE_DURATION_MS = 15_000
+
+const OnboardingHandoffCue = () => {
+  const onboardingComplete = useAppStore((state) => state.onboardingComplete)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (!onboardingComplete || !consumeOnboardingHandoff()) return
+    setVisible(true)
+    const timeoutId = window.setTimeout(
+      () => setVisible(false),
+      HANDOFF_CUE_DURATION_MS
+    )
+    return () => window.clearTimeout(timeoutId)
+  }, [onboardingComplete])
+
+  if (!visible) return null
+
+  return (
+    <div
+      aria-live="polite"
+      className="flex items-start gap-3 rounded-cockpit border border-primary/30 bg-primary/10 p-3 text-sm"
+    >
+      <MdInfoOutline className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+      <p className="min-w-0 flex-1 leading-relaxed">
+        <strong className="font-semibold">Start here.</strong> Work through the
+        preflight actions, then use the numbered phase chips above as the flight
+        progresses.
+      </p>
+      <button
+        type="button"
+        onClick={() => setVisible(false)}
+        className="btn btn-ghost btn-circle min-h-11 w-11 shrink-0"
+        aria-label="Dismiss preflight guidance"
+      >
+        <MdClose className="h-4 w-4" />
+      </button>
+    </div>
+  )
 }
 
 const HoldsSubBlock = () => (
@@ -135,7 +179,13 @@ export const BriefingSection = ({ phase, showHolds }: BriefingSectionProps) => (
         </div>
       )}
 
-      <section aria-label="Primary actions" className="space-y-2">
+      <section
+        id={phase.id === 'preflight' ? 'preflight-primary-checklist' : undefined}
+        tabIndex={phase.id === 'preflight' ? -1 : undefined}
+        aria-label="Primary actions"
+        className="space-y-2 focus:outline-none"
+      >
+        {phase.id === 'preflight' && <OnboardingHandoffCue />}
         <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/60">
           Do this
         </h3>

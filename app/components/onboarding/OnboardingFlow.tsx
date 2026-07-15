@@ -12,6 +12,7 @@ import {
   notice
 } from '~/content/oshkosh'
 import { useAppStore } from '~/store/useAppStore'
+import { markOnboardingHandoff } from '~/utils/onboardingHandoff'
 
 type StepId = 'notice' | 'profile' | 'ready'
 
@@ -69,6 +70,8 @@ export const OnboardingFlow = () => {
   const profileId = useAppStore((s) => s.aircraftProfileId)
   const setProfileId = useAppStore((s) => s.setAircraftProfileId)
   const completeOnboarding = useAppStore((s) => s.completeOnboarding)
+  const setCurrentPhase = useAppStore((s) => s.setCurrentPhase)
+  const setActiveSection = useAppStore((s) => s.setActiveSection)
 
   const [stepIdx, setStepIdx] = useState(0)
   const step = steps[stepIdx]
@@ -83,13 +86,24 @@ export const OnboardingFlow = () => {
 
   const next = () => {
     if (step === 'ready') {
-      completeOnboarding()
+      setCurrentPhase('preflight', 'onboarding')
+      setActiveSection('briefing')
+      markOnboardingHandoff()
+      completeOnboarding('guided')
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          const checklist = document.getElementById('preflight-primary-checklist')
+          if (!checklist) return
+          checklist.focus({ preventScroll: true })
+          checklist.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        })
+      })
       return
     }
     if (canAdvance) setStepIdx((i) => Math.min(i + 1, steps.length - 1))
   }
   const back = () => setStepIdx((i) => Math.max(i - 1, 0))
-  const skip = () => completeOnboarding()
+  const skip = () => completeOnboarding('skipped')
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-base-200/95 backdrop-blur md:items-center md:justify-center">
@@ -223,7 +237,7 @@ export const OnboardingFlow = () => {
                 icon={<MdCheckCircle className="h-6 w-6" />}
                 eyebrow="Step 3 of 3"
                 title="You're set"
-                description="Plan your arrival on the ground. When you're ready to fly, switch to Flight mode for the cockpit-optimised view."
+                description="Start with the preflight checklist, then use the numbered phase chips to move through the arrival. Switch to Flight mode only when you're ready to fly."
               />
 
               <ul className="mx-auto max-w-sm space-y-2 text-sm">
@@ -269,7 +283,7 @@ export const OnboardingFlow = () => {
             disabled={!canAdvance}
             className="btn btn-primary btn-sm gap-1 disabled:opacity-40"
           >
-            {step === 'ready' ? 'Open the app' : 'Next'}
+            {step === 'ready' ? 'Start preflight checklist' : 'Next'}
             <MdArrowForward className="h-4 w-4" />
           </button>
         </footer>

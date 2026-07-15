@@ -6,6 +6,7 @@ import { ErrorBoundary } from '~/components/ErrorBoundary'
 import { ErrorNotification } from '~/components/ui/ErrorNotification'
 import { OfflineIndicator } from '~/components/ui/OfflineIndicator'
 import { OnboardingFlow } from '~/components/onboarding/OnboardingFlow'
+import { PwaInstallCard } from '~/components/pwa/PwaInstallCard'
 import { ContactSheet } from '~/components/feedback/ContactSheet'
 import { FeedbackPrompt } from '~/components/feedback/FeedbackPrompt'
 import { NewsPanel } from '~/components/news/NewsPanel'
@@ -15,6 +16,7 @@ import { StatusBar } from './StatusBar'
 import { SkipToContent } from './SkipToContent'
 import { PhaseSpine } from '~/components/phase/PhaseSpine'
 import { PhaseHero } from '~/components/phase/PhaseHero'
+import { usePwaInstall } from '~/hooks/usePwaInstall'
 
 interface AppShellProps {
   /** Anything that renders below the PhaseHero (sections, divert, sheets). */
@@ -28,6 +30,7 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
   const mode = useAppStore((s) => s.mode)
   const onboardingComplete = useAppStore((s) => s.onboardingComplete)
   const hasHydrated = useAppStore((s) => s.hasHydrated)
+  const pwaInstall = usePwaInstall()
 
   useGeolocation()
 
@@ -47,8 +50,9 @@ export const AppShell = ({ children, topBanner }: AppShellProps) => {
         <ErrorNotification />
         {hasHydrated && !onboardingComplete && <OnboardingFlow />}
 
-        <AppBar />
+        <AppBar pwaInstall={pwaInstall} />
         <StatusBar />
+        <PwaInstallCard installState={pwaInstall} />
         {topBanner}
         <PhaseSpine />
 

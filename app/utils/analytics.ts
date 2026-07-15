@@ -1,4 +1,5 @@
 import posthogJs from 'posthog-js'
+import type { DiscoverabilityPageId } from '~/content/discoverability'
 import type { PhaseId } from '~/content/oshkosh'
 import type { AppMode, SectionId, SheetId } from '~/store/useAppStore'
 
@@ -174,6 +175,13 @@ export type ExternalLinkDestination =
   | 'official_notice'
   | 'news_source_homepage'
 
+export type OnboardingCompletionMethod = 'guided' | 'skipped'
+
+export type PwaInstallSurface =
+  | 'overflow_menu'
+  | 'post_onboarding'
+  | 'status_bar'
+
 export type AppEventMap = {
   'phase changed': {
     from: PhaseId
@@ -214,6 +222,7 @@ export type AppEventMap = {
   'onboarding completed': {
     notice_acknowledged: boolean
     profile_id: string | null
+    completion_method: OnboardingCompletionMethod
   }
   'profile selected': {
     profile_id: string | null
@@ -231,8 +240,12 @@ export type AppEventMap = {
   }
   'pwa install prompted': {
     /** User-facing trigger that opened the native install prompt. */
-    surface: 'overflow_menu'
+    surface: PwaInstallSurface
     outcome: 'accepted' | 'dismissed' | 'unavailable'
+  }
+  'pwa install opportunity shown': {
+    surface: Extract<PwaInstallSurface, 'post_onboarding' | 'status_bar'>
+    method: 'native_prompt' | 'ios_instructions'
   }
   'pwa installed': {
     /** Captured from the `appinstalled` event - user has installed. */
@@ -281,6 +294,10 @@ export type AppEventMap = {
     destination: ExternalLinkDestination
     phase: PhaseId | null
     source_id: string | null
+  }
+  'discoverability app opened': {
+    page_id: DiscoverabilityPageId
+    surface: 'header' | 'intro' | 'footer'
   }
   'checklist item toggled': {
     phase: PhaseId

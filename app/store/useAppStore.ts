@@ -11,6 +11,7 @@ import {
 import type { PhaseId } from '~/content/oshkosh'
 import {
   trackAppEvent,
+  type OnboardingCompletionMethod,
   type SheetCloseMethod,
   type SheetOpenSurface
 } from '~/utils/analytics'
@@ -153,7 +154,7 @@ interface AppState {
   setAssignedRunwayId: (id: string | null) => void
   setCurrentLocation: (location: CurrentLocation | null) => void
   setGpsEnabled: (enabled: boolean) => void
-  completeOnboarding: () => void
+  completeOnboarding: (method: OnboardingCompletionMethod) => void
   resetOnboarding: () => void
   setActiveSection: (section: SectionId) => void
   openSheetAction: (sheet: SheetId, options?: OpenSheetOptions) => void
@@ -300,13 +301,14 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      completeOnboarding: () => {
+      completeOnboarding: (method) => {
         if (get().onboardingComplete) return
         set({ onboardingComplete: true })
         const state = get()
         trackAppEvent('onboarding completed', {
           notice_acknowledged: state.noticeYearAcknowledged !== null,
-          profile_id: state.aircraftProfileId
+          profile_id: state.aircraftProfileId,
+          completion_method: method
         })
       },
 

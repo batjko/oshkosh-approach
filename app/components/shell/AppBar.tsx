@@ -15,9 +15,9 @@ import {
 } from 'react-icons/md'
 import { ModeToggle } from '~/components/ui/ModeToggle'
 import { useAppStore } from '~/store/useAppStore'
-import { usePwaInstall } from '~/hooks/usePwaInstall'
+import type { PwaInstallState } from '~/hooks/usePwaInstall'
 
-const OverflowMenu = () => {
+const OverflowMenu = ({ pwaInstall }: { pwaInstall: PwaInstallState }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const theme = useAppStore((s) => s.theme)
@@ -27,7 +27,7 @@ const OverflowMenu = () => {
   const resetOnboarding = useAppStore((s) => s.resetOnboarding)
   const openSheet = useAppStore((s) => s.openSheetAction)
   const mode = useAppStore((s) => s.mode)
-  const { canInstall, promptInstall } = usePwaInstall()
+  const { canInstall, promptInstall } = pwaInstall
 
   useEffect(() => {
     if (!open) return
@@ -66,7 +66,7 @@ const OverflowMenu = () => {
                 role="menuitem"
                 type="button"
                 onClick={() => {
-                  void promptInstall()
+                  void promptInstall('overflow_menu')
                   setOpen(false)
                 }}
                 className="flex min-h-12 w-full items-center gap-2 bg-primary/5 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10"
@@ -208,7 +208,7 @@ const NewsRibbonButton = () => {
 }
 
 /** Top app bar: identity, mode toggle, overflow menu. */
-export const AppBar = () => {
+export const AppBar = ({ pwaInstall }: { pwaInstall: PwaInstallState }) => {
   const openSheet = useAppStore((s) => s.openSheetAction)
 
   return (
@@ -245,7 +245,7 @@ export const AppBar = () => {
             <ModeToggle />
           </div>
           <div className="pl-1">
-            <OverflowMenu />
+            <OverflowMenu pwaInstall={pwaInstall} />
           </div>
         </div>
       </div>

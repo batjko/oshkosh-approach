@@ -1,12 +1,16 @@
 import type { MetaDescriptor } from '@remix-run/node'
+import type { ReactNode } from 'react'
 import { Link } from '@remix-run/react'
-import { MdArrowBack, MdOpenInNew } from 'react-icons/md'
+import { MdArrowBack, MdArrowForward, MdOpenInNew } from 'react-icons/md'
 
 import {
   discoverabilityNav,
-  type DiscoverabilityPage
+  relatedDiscoverabilityPages,
+  type DiscoverabilityPage,
+  type DiscoverabilityPageId
 } from '~/content/discoverability'
 import { notice, sourceList } from '~/content/oshkosh'
+import { trackAppEvent } from '~/utils/analytics'
 import {
   SITE_NAME,
   SOCIAL_IMAGE_HEIGHT,
@@ -21,6 +25,33 @@ import {
 interface DiscoverabilityArticleProps {
   page: DiscoverabilityPage
 }
+
+interface TrackedAppLinkProps {
+  pageId: DiscoverabilityPageId
+  surface: 'header' | 'intro' | 'footer'
+  className: string
+  children: ReactNode
+}
+
+const TrackedAppLink = ({
+  pageId,
+  surface,
+  className,
+  children
+}: TrackedAppLinkProps) => (
+  <Link
+    to="/"
+    className={className}
+    onClick={() =>
+      trackAppEvent('discoverability app opened', {
+        page_id: pageId,
+        surface
+      })
+    }
+  >
+    {children}
+  </Link>
+)
 
 const sourceLinksForPage = (page: DiscoverabilityPage) =>
   sourceList(page.sourceIds).filter((source) => Boolean(source.url))
@@ -104,18 +135,20 @@ export const discoverabilityMeta = (
 
 export const DiscoverabilityArticle = ({ page }: DiscoverabilityArticleProps) => {
   const sourceLinks = sourceLinksForPage(page)
+  const relatedPages = relatedDiscoverabilityPages(page)
 
   return (
     <div className="min-h-screen bg-base-200 text-base-content">
       <header className="border-b border-base-300 bg-base-100">
         <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-3 px-4 py-4 tablet:flex-row tablet:items-center tablet:justify-between tablet:px-6">
-          <Link
-            to="/"
+          <TrackedAppLink
+            pageId={page.id}
+            surface="header"
             className="inline-flex min-h-11 items-center gap-2 rounded-cockpit px-1 text-sm font-semibold text-primary underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100"
           >
             <MdArrowBack aria-hidden="true" className="h-5 w-5" />
             Open app
-          </Link>
+          </TrackedAppLink>
           <nav
             aria-label="Briefing pages"
             className="-mx-2 flex min-w-0 gap-1 overflow-x-auto px-2 text-sm scrollbar-none"
@@ -144,6 +177,26 @@ export const DiscoverabilityArticle = ({ page }: DiscoverabilityArticleProps) =>
           <p className="mt-4 max-w-3xl text-lg leading-relaxed text-base-content/80">
             {page.intro}
           </p>
+
+          <div className="mt-6 rounded-cockpit border border-primary/25 bg-primary/5 p-4 tablet:flex tablet:items-center tablet:justify-between tablet:gap-5">
+            <div>
+              <h2 className="text-base font-semibold text-base-content">
+                Ready to use the operational companion?
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-base-content/70">
+                Continue to the phase navigator, planning checklists, runway tools,
+                and connected KOSH NOTAM view.
+              </p>
+            </div>
+            <TrackedAppLink
+              pageId={page.id}
+              surface="intro"
+              className="btn btn-primary tap-target mt-4 w-full shrink-0 gap-2 tablet:mt-0 tablet:w-auto"
+            >
+              Open live companion
+              <MdArrowForward aria-hidden="true" className="h-5 w-5" />
+            </TrackedAppLink>
+          </div>
 
           <div className="mt-6 rounded-cockpit border border-warning/30 bg-warning/10 p-4 text-sm leading-relaxed">
             <strong className="font-semibold text-warning">Safety boundary:</strong>{' '}
@@ -200,6 +253,33 @@ export const DiscoverabilityArticle = ({ page }: DiscoverabilityArticleProps) =>
               </section>
             ))}
           </div>
+
+          <section className="mt-10 border-t border-base-300 pt-8">
+            <h2 className="text-xl font-semibold">Related briefings</h2>
+            <p className="mt-2 text-sm leading-relaxed text-base-content/70">
+              Continue with another source-backed planning overview.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {relatedPages.map((relatedPage) => (
+                <Link
+                  key={relatedPage.id}
+                  to={relatedPage.path}
+                  className="group rounded-cockpit border border-base-300 bg-base-200 p-4 transition hover:border-primary/40 hover:bg-primary/5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100"
+                >
+                  <span className="flex items-start justify-between gap-3 font-semibold leading-snug text-base-content">
+                    {relatedPage.h1}
+                    <MdArrowForward
+                      aria-hidden="true"
+                      className="mt-0.5 h-5 w-5 shrink-0 text-primary transition group-hover:translate-x-0.5"
+                    />
+                  </span>
+                  <span className="mt-2 block text-sm leading-relaxed text-base-content/65">
+                    {relatedPage.description}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
 
           {page.faqs && page.faqs.length > 0 && (
             <section className="mt-10 border-t border-base-300 pt-8">
@@ -260,12 +340,13 @@ export const DiscoverabilityArticle = ({ page }: DiscoverabilityArticleProps) =>
               {item.label}
             </Link>
           ))}
-          <Link
-            to="/"
+          <TrackedAppLink
+            pageId={page.id}
+            surface="footer"
             className="inline-flex min-h-8 shrink-0 items-center border-l border-base-300 pl-3 font-medium text-base-content/60 underline-offset-4 hover:text-base-content hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-base-100"
           >
             App
-          </Link>
+          </TrackedAppLink>
         </div>
       </footer>
     </div>

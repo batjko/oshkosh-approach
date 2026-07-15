@@ -47,6 +47,7 @@ export interface DiscoverabilityPage {
   intro: string
   lastmod: string
   sourceIds: string[]
+  relatedPageIds: DiscoverabilityPageId[]
   sections: DiscoverabilitySection[]
   faqs?: DiscoverabilityFaq[]
 }
@@ -74,6 +75,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'The Fisk VFR arrival is the standard path many general aviation pilots brief before flying to EAA AirVenture Oshkosh. Oshkosh Approach packages the Notice-sourced flow into a phase-driven companion, while keeping the FAA/EAA AirVenture Notice as the authority.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'eaa-notam-page', 'eaa-flying-hub', 'eaa-tips'],
+    relatedPageIds: ['airventure-arrival-briefing', 'ripon-to-fisk', 'nordo-oshkosh'],
     sections: [
       {
         heading: 'What this page is for',
@@ -116,6 +118,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'Pilots often search for the Oshkosh NOTAM when they mean the annual FAA/EAA AirVenture Notice. The official Notice remains the authoritative procedure source; Oshkosh Approach keeps that source visible and gates flight-day mode on acknowledging it.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'eaa-notam-page', 'faa-domestic-notices'],
+    relatedPageIds: ['kosh-notams', 'sources', 'fisk-arrival'],
     sections: [
       {
         heading: 'Official Notice status',
@@ -158,6 +161,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'The Ripon to Fisk segment is one of the highest-workload parts of the Oshkosh VFR arrival. The app keeps this phase separated from preflight planning and runway-assignment work.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'eaa-tips'],
+    relatedPageIds: ['fisk-arrival', 'airventure-arrival-briefing', 'oshkosh-alternates'],
     sections: [
       {
         heading: 'Phase focus',
@@ -196,6 +200,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'Oshkosh Approach is built for pilots who have already read the official Notice and want a phase-driven briefing companion for tablet or phone use.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'eaa-flying-hub', 'eaa-tips', 'faa-tfr'],
+    relatedPageIds: ['fisk-arrival', 'oshkosh-parking-signs', 'oshkosh-alternates'],
     sections: [
       {
         heading: 'Event and procedure window',
@@ -234,6 +239,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'Parking and arrival signs are part of the Oshkosh arrival prep workflow. Oshkosh Approach keeps sign preparation visible during preflight and in a reference sheet.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'eaa-signs', 'eaa-aircraft-parking', 'eaa-parking-status'],
+    relatedPageIds: ['airventure-arrival-briefing', 'oshkosh-alternates', 'sources'],
     sections: [
       {
         heading: 'Official sign resource',
@@ -274,6 +280,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'Alternate planning matters before launching for AirVenture. Oshkosh Approach keeps divert triggers and alternate-airport references close to the active phase flow.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'eaa-flying-hub'],
+    relatedPageIds: ['airventure-arrival-briefing', 'fisk-arrival', 'kosh-notams'],
     sections: [
       {
         heading: 'Alternates surfaced in the app',
@@ -312,6 +319,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'NORDO procedures are specialized and should be briefed from the current FAA/EAA AirVenture Notice. Oshkosh Approach includes a NORDO aircraft profile so pilots can keep this case distinct from the standard Fisk flow.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice'],
+    relatedPageIds: ['fisk-arrival', 'oshkosh-notam-2026', 'sources'],
     sections: [
       {
         heading: 'Profile in the app',
@@ -349,6 +357,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'Current KOSH NOTAMs are time-sensitive. Oshkosh Approach fetches them for the main app route on every page load and keeps this static page descriptive only.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'faa-domestic-notices'],
+    relatedPageIds: ['oshkosh-notam-2026', 'airventure-arrival-briefing', 'sources'],
     sections: [
       {
         heading: 'Live NOTAM behavior',
@@ -386,6 +395,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'Oshkosh Approach is source-backed. Procedural content is traced to the FAA/EAA AirVenture Notice and official EAA/FAA resources where available.',
     lastmod: noticeLastmod,
     sourceIds: Object.keys(sources),
+    relatedPageIds: ['oshkosh-notam-2026', 'fisk-arrival', 'about'],
     sections: [
       {
         heading: 'Authoritative source',
@@ -422,6 +432,7 @@ export const discoverabilityPages: DiscoverabilityPage[] = [
       'Oshkosh Approach is a free, tablet-friendly companion for general aviation pilots preparing for and flying the AirVenture arrival.',
     lastmod: noticeLastmod,
     sourceIds: ['faa-2026-notice', 'eaa-flying-hub'],
+    relatedPageIds: ['airventure-arrival-briefing', 'sources', 'kosh-notams'],
     sections: [
       {
         heading: 'Purpose',
@@ -450,3 +461,8 @@ export const discoverabilityPageById = (
   if (!page) throw new Error(`Unknown discoverability page: ${id}`)
   return page
 }
+
+export const relatedDiscoverabilityPages = (
+  page: DiscoverabilityPage
+): DiscoverabilityPage[] =>
+  page.relatedPageIds.map(discoverabilityPageById)

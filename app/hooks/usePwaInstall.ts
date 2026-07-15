@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { trackAppEvent } from '~/utils/analytics'
+import {
+  trackAppEvent,
+  type PwaInstallSurface
+} from '~/utils/analytics'
+import { isIosInstallCapable } from '~/utils/pwaInstall'
 
 /**
  * `beforeinstallprompt` event shape per the W3C spec. Not yet in the
@@ -41,11 +45,15 @@ export interface PwaInstallState {
   canInstall: boolean
   /** True when the page is running as an installed PWA. */
   isStandalone: boolean
+  /** True when iOS can show manual Add to Home Screen guidance. */
+  canShowIosInstructions: boolean
   /**
    * Trigger the deferred native install prompt. Resolves once the user
    * has chosen, or immediately if no prompt is currently available.
    */
-  promptInstall: () => Promise<'accepted' | 'dismissed' | 'unavailable'>
+  promptInstall: (
+    surface?: PwaInstallSurface
+  ) => Promise<'accepted' | 'dismissed' | 'unavailable'>
 }
 
 /**
@@ -59,9 +67,11 @@ export interface PwaInstallState {
 export const usePwaInstall = (): PwaInstallState => {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [isStandalone, setIsStandalone] = useState<boolean>(() => detectStandalone())
+  const [isIos, setIsIos] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    setIsIos(isIosInstallCapable(window.navigator))
 
     const handleBeforeInstall = (event: Event) => {
       event.preventDefault()
@@ -101,10 +111,12 @@ export const usePwaInstall = (): PwaInstallState => {
     }
   }, [])
 
-  const promptInstall = useCallback<PwaInstallState['promptInstall']>(async () => {
+  const promptInstall = useCallback<PwaInstallState['promptInstall']>(async (
+    surface = 'overflow_menu'
+  ) => {
     if (!deferred) {
       trackAppEvent('pwa install prompted', {
-        surface: 'overflow_menu',
+        surface,
         outcome: 'unavailable'
       })
       return 'unavailable'
@@ -113,7 +125,7 @@ export const usePwaInstall = (): PwaInstallState => {
       await deferred.prompt()
       const choice = await deferred.userChoice
       trackAppEvent('pwa install prompted', {
-        surface: 'overflow_menu',
+        surface,
         outcome: choice.outcome
       })
       // The event can only be used once.
@@ -121,7 +133,7 @@ export const usePwaInstall = (): PwaInstallState => {
       return choice.outcome
     } catch {
       trackAppEvent('pwa install prompted', {
-        surface: 'overflow_menu',
+        surface,
         outcome: 'dismissed'
       })
       setDeferred(null)
@@ -132,6 +144,7 @@ export const usePwaInstall = (): PwaInstallState => {
   return {
     canInstall: deferred !== null && !isStandalone,
     isStandalone,
+    canShowIosInstructions: isIos && !isStandalone,
     promptInstall
   }
 }
